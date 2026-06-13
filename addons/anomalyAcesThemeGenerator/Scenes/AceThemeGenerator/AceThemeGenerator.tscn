@@ -1,0 +1,279 @@
+[gd_scene format=3 uid="uid://bu7enomquk8vi"]
+
+[ext_resource type="Script" uid="uid://cwe3liqokj10v" path="res://addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd" id="1_theme_gen"]
+
+[node name="AceThemeGenerator" type="Control" unique_id=342791316]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_theme_gen")
+
+[node name="MainPanel" type="PanelContainer" parent="." unique_id=1532117646]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HSplit" type="HSplitContainer" parent="MainPanel" unique_id=1898090547]
+layout_mode = 2
+split_offsets = PackedInt32Array(600)
+split_offset = 600
+
+[node name="LeftScroll" type="ScrollContainer" parent="MainPanel/HSplit" unique_id=725154814]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LeftBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll" unique_id=1115206790]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="TitleLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1276942304]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Anomaly Aces Theme Generator"
+
+[node name="PathSettingsPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1148519051]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel" unique_id=1359244392]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=970875916]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Path Settings"
+
+[node name="HSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=1606143711]
+layout_mode = 2
+
+[node name="ImageRow" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=1728150496]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/ImageRow" unique_id=1770844812]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Image Assets Folder:"
+
+[node name="ImageFolderEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/ImageRow" unique_id=1008606621]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ImageBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/ImageRow" unique_id=2038117974]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="FontsRow" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=721936290]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/FontsRow" unique_id=727085196]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Fonts Folder:"
+
+[node name="FontsFolderEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/FontsRow" unique_id=901086309]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FontsBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/FontsRow" unique_id=1489112540]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="MetadataRow" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=1117757935]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/MetadataRow" unique_id=326738287]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Metadata JSON File:"
+
+[node name="MetadataFileEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/MetadataRow" unique_id=1382360017]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MetadataBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/MetadataRow" unique_id=2051952372]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="OutputRow" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox" unique_id=833213161]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/OutputRow" unique_id=1625454677]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Output Theme JSON:"
+
+[node name="OutputFileEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/OutputRow" unique_id=318677663]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OutputBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PathSettingsPanel/VBox/OutputRow" unique_id=2094479958]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="PartsBuilderPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1702325905]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel" unique_id=648522947]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=251194946]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Theme Parts Builder"
+
+[node name="HSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1419993842]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=2049004809]
+layout_mode = 2
+columns = 2
+
+[node name="Label" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1422766590]
+layout_mode = 2
+text = "Control Type:"
+
+[node name="ControlTypeOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=21783434]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+selected = 0
+item_count = 6
+popup/item_0/text = "Button"
+popup/item_0/id = 0
+popup/item_1/text = "Label"
+popup/item_1/id = 1
+popup/item_2/text = "LineEdit"
+popup/item_2/id = 2
+popup/item_3/text = "Panel"
+popup/item_3/id = 3
+popup/item_4/text = "CheckBox"
+popup/item_4/id = 4
+popup/item_5/text = "TextEdit"
+popup/item_5/id = 5
+
+[node name="Label2" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=181081056]
+layout_mode = 2
+text = "Property Type:"
+
+[node name="PropertyTypeOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=890629819]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+selected = 0
+item_count = 3
+popup/item_0/text = "Color"
+popup/item_0/id = 0
+popup/item_1/text = "Constant"
+popup/item_1/id = 1
+popup/item_2/text = "Font"
+popup/item_2/id = 2
+
+[node name="Label3" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1309863408]
+layout_mode = 2
+text = "Property Name:"
+
+[node name="PropertyNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=137335676]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g. font_color, outline_size"
+
+[node name="Label4" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=726122678]
+layout_mode = 2
+text = "Property Value:"
+
+[node name="PropertyValueEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1995260460]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g. #FF00FF, 5, res://fonts/font.ttf"
+
+[node name="AddPartBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1361714168]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add / Update Theme Part"
+
+[node name="TreeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=771472190]
+layout_mode = 2
+text = "Configured Theme Overrides:"
+
+[node name="PartsTree" type="Tree" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1103935351]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+columns = 3
+column_titles_visible = true
+hide_root = true
+
+[node name="ActionBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1294328254]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ApplyPreviewBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/ActionBox" unique_id=451977411]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply & Preview Theme"
+
+[node name="CompileBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/ActionBox" unique_id=665976336]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Generate Theme JSON"
+
+[node name="RightPanel" type="VBoxContainer" parent="MainPanel/HSplit" unique_id=2025213455]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel" unique_id=835492427]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Live Theme Preview"
+
+[node name="PreviewArea" type="PanelContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1513521225]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewVBox" type="VBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea" unique_id=1995387134]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SampleLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=933983467]
+layout_mode = 2
+text = "Sample Headline Label"
+
+[node name="SampleButton" type="Button" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=2032802982]
+layout_mode = 2
+text = "Sample Button"
+
+[node name="SampleCheckbox" type="CheckBox" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=1767416468]
+layout_mode = 2
+text = "Sample CheckBox Option"
+
+[node name="SampleLineEdit" type="LineEdit" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=49514934]
+layout_mode = 2
+text = "Editable sample text here..."
+
+[node name="SampleTextEdit" type="TextEdit" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=1451641788]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+text = "Multi-line preview box."
