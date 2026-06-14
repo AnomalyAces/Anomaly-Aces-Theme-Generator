@@ -24,6 +24,8 @@ func _has_main_screen() -> bool:
 func _make_visible(visible: bool) -> void:
 	if is_instance_valid(theme_generator_instance) and not theme_generator_instance.is_queued_for_deletion():
 		theme_generator_instance.visible = visible
+		if visible:
+			get_editor_interface().inspect_object(theme_generator_instance)
 
 func _get_plugin_name() -> String:
 	return "Theme Gen"
