@@ -8,7 +8,7 @@
 			"styleboxes": {
 				"panel": {
 					"id": "test_panel",
-					"value": "res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres"
 				}
 			}
 		}

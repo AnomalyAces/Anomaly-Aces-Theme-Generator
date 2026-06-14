@@ -93,6 +93,7 @@ func setup_ui() -> void:
 	%ApplyPreviewBtn.pressed.connect(_on_apply_preview_pressed)
 	%CompileBtn.pressed.connect(_on_compile_pressed)
 	parts_tree.item_selected.connect(_on_tree_item_selected)
+	override_name_edit.text_changed.connect(_on_override_name_changed)
 
 	# Setup Parts Tree titles
 	parts_tree.columns = 4
@@ -252,6 +253,7 @@ func update_value_input_control() -> void:
 			else:
 				cp.color = Color.WHITE
 			cp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			cp.color_changed.connect(_on_color_picker_changed)
 			value_container.add_child(cp)
 		"constant", "font_size":
 			# Add a SpinBox
@@ -264,6 +266,7 @@ func update_value_input_control() -> void:
 			else:
 				sb.value = 0
 			sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			sb.value_changed.connect(_on_spin_box_changed)
 			value_container.add_child(sb)
 		"font", "icon", "stylebox":
 			# Add an EditorResourcePicker
@@ -287,6 +290,7 @@ func update_value_input_control() -> void:
 			erp.resource_changed.connect(func(res: Resource):
 				if res and Engine.is_editor_hint():
 					EditorInterface.edit_resource(res)
+				_on_resource_picker_changed(res)
 			)
 			erp.resource_selected.connect(func(res: Resource, inspect: bool):
 				if res and Engine.is_editor_hint():
@@ -712,3 +716,165 @@ func _on_tree_item_selected() -> void:
 				
 		# 4. Update the input widgets and Name/ID
 		update_value_input_control()
+
+func _on_override_name_changed(new_text: String) -> void:
+	if not _config_loaded:
+		return
+	var control_type = control_type_edit.text.strip_edges()
+	if control_type == "":
+		return
+	var is_custom = custom_type_check.button_pressed
+	if is_custom:
+		var custom_type = custom_type_name_edit.text.strip_edges()
+		if custom_type != "":
+			control_type = custom_type
+
+	if prop_type_option.selected == -1 or prop_name_option.selected == -1:
+		return
+	var prop_type = prop_type_option.get_item_text(prop_type_option.selected).to_lower().replace(" ", "_")
+	var prop_name = prop_name_option.get_item_text(prop_name_option.selected)
+	
+	var section_map = {
+		"color": "colors",
+		"constant": "constants",
+		"font": "fonts",
+		"font_size": "font_sizes",
+		"icon": "icons",
+		"stylebox": "styleboxes"
+	}
+	var sec = section_map.get(prop_type, "")
+	if sec == "":
+		return
+
+	if theme_parts.has(control_type) and theme_parts[control_type].has(sec) and theme_parts[control_type][sec].has(prop_name):
+		var entry = theme_parts[control_type][sec][prop_name]
+		if entry is Dictionary:
+			entry["id"] = new_text.strip_edges()
+		else:
+			theme_parts[control_type][sec][prop_name] = {
+				"value": entry,
+				"id": new_text.strip_edges()
+			}
+		save_config()
+		refresh_parts_tree()
+
+func _on_color_picker_changed(color: Color) -> void:
+	if not _config_loaded:
+		return
+	var control_type = control_type_edit.text.strip_edges()
+	if control_type == "":
+		return
+	var is_custom = custom_type_check.button_pressed
+	if is_custom:
+		var custom_type = custom_type_name_edit.text.strip_edges()
+		if custom_type != "":
+			control_type = custom_type
+			theme_variations[custom_type] = control_type_edit.text.strip_edges()
+
+	if prop_type_option.selected == -1 or prop_name_option.selected == -1:
+		return
+	var prop_name = prop_name_option.get_item_text(prop_name_option.selected)
+	var override_id = override_name_edit.text.strip_edges()
+
+	if not theme_parts.has(control_type):
+		theme_parts[control_type] = {}
+	if not theme_parts[control_type].has("colors"):
+		theme_parts[control_type]["colors"] = {}
+
+	var prop_val = "#" + color.to_html(true)
+	theme_parts[control_type]["colors"][prop_name] = {
+		"value": prop_val,
+		"id": override_id
+	}
+
+	save_config()
+	refresh_parts_tree()
+	_on_apply_preview_pressed()
+
+func _on_spin_box_changed(value: float) -> void:
+	if not _config_loaded:
+		return
+	var control_type = control_type_edit.text.strip_edges()
+	if control_type == "":
+		return
+	var is_custom = custom_type_check.button_pressed
+	if is_custom:
+		var custom_type = custom_type_name_edit.text.strip_edges()
+		if custom_type != "":
+			control_type = custom_type
+			theme_variations[custom_type] = control_type_edit.text.strip_edges()
+
+	if prop_type_option.selected == -1 or prop_name_option.selected == -1:
+		return
+	var prop_type = prop_type_option.get_item_text(prop_type_option.selected).to_lower().replace(" ", "_")
+	var prop_name = prop_name_option.get_item_text(prop_name_option.selected)
+	var override_id = override_name_edit.text.strip_edges()
+
+	var sec = "constants" if prop_type == "constant" else "font_sizes"
+
+	if not theme_parts.has(control_type):
+		theme_parts[control_type] = {}
+	if not theme_parts[control_type].has(sec):
+		theme_parts[control_type][sec] = {}
+
+	theme_parts[control_type][sec][prop_name] = {
+		"value": int(value),
+		"id": override_id
+	}
+
+	save_config()
+	refresh_parts_tree()
+	_on_apply_preview_pressed()
+
+func _on_resource_picker_changed(res: Resource) -> void:
+	if not _config_loaded:
+		return
+	var control_type = control_type_edit.text.strip_edges()
+	if control_type == "":
+		return
+	var is_custom = custom_type_check.button_pressed
+	if is_custom:
+		var custom_type = custom_type_name_edit.text.strip_edges()
+		if custom_type != "":
+			control_type = custom_type
+			theme_variations[custom_type] = control_type_edit.text.strip_edges()
+
+	if prop_type_option.selected == -1 or prop_name_option.selected == -1:
+		return
+	var prop_type = prop_type_option.get_item_text(prop_type_option.selected).to_lower().replace(" ", "_")
+	var prop_name = prop_name_option.get_item_text(prop_name_option.selected)
+	var override_id = override_name_edit.text.strip_edges()
+	
+	var section_map = {
+		"font": "fonts",
+		"icon": "icons",
+		"stylebox": "styleboxes"
+	}
+	var sec = section_map.get(prop_type, "")
+	if sec == "":
+		return
+
+	if res == null:
+		if theme_parts.has(control_type) and theme_parts[control_type].has(sec) and theme_parts[control_type][sec].has(prop_name):
+			theme_parts[control_type][sec].erase(prop_name)
+			if theme_parts[control_type][sec].is_empty():
+				theme_parts[control_type].erase(sec)
+			if theme_parts[control_type].is_empty():
+				theme_parts.erase(control_type)
+				if theme_variations.has(control_type):
+					theme_variations.erase(control_type)
+	else:
+		var prop_val = res.resource_path.strip_edges()
+		if prop_val != "":
+			if not theme_parts.has(control_type):
+				theme_parts[control_type] = {}
+			if not theme_parts[control_type].has(sec):
+				theme_parts[control_type][sec] = {}
+			theme_parts[control_type][sec][prop_name] = {
+				"value": prop_val,
+				"id": override_id
+			}
+			
+	save_config()
+	refresh_parts_tree()
+	_on_apply_preview_pressed()

@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://bu7enomquk8vi"]
 
 [ext_resource type="Script" uid="uid://cwe3liqokj10v" path="res://addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd" id="1_theme_gen"]
+[ext_resource type="StyleBox" uid="uid://bq6j6uw4mh32j" path="res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres" id="2_pwr6p"]
 
-[sub_resource type="Theme" id="Theme_7b8ur"]
+[sub_resource type="Theme" id="Theme_adaj5"]
+PanelContainer/styles/panel = ExtResource("2_pwr6p")
 
 [node name="AceThemeGenerator" type="Control" unique_id=342791316]
 layout_mode = 3
@@ -183,7 +185,7 @@ text = "Live Theme Preview"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme = SubResource("Theme_7b8ur")
+theme = SubResource("Theme_adaj5")
 
 [node name="PreviewVBox" type="VBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea" unique_id=1995387134]
 layout_mode = 2
