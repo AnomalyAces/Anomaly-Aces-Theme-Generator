@@ -1,0 +1,19 @@
+{
+	"fonts_folder": "",
+	"image_folder": "",
+	"metadata_file": "",
+	"output_file": "",
+	"theme_parts": {
+		"PanelContainer": {
+			"styleboxes": {
+				"panel": {
+					"id": "test_panel",
+					"value": "res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres"
+				}
+			}
+		}
+	},
+	"theme_variations": {
+
+	}
+}
