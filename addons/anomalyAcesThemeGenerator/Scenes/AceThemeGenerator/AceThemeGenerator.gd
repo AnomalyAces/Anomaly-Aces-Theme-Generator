@@ -7,22 +7,22 @@ const OLD_CONFIG_FILE_PATH = "res://addons/anomalyAcesThemeGenerator/config.json
 
 # Export properties for Inspector tab
 @export_group("Export Settings")
-@export_dir var image_folder: String = "":
+@export_dir var image_folder: String = "res://addons/anomalyAcesThemeGenerator/working/Images":
 	set(val):
 		image_folder = val
 		save_config()
 
-@export_dir var fonts_folder: String = "":
+@export_dir var fonts_folder: String = "res://addons/anomalyAcesThemeGenerator/working/Fonts":
 	set(val):
 		fonts_folder = val
 		save_config()
 
-@export_file("*.json") var metadata_file: String = "":
+@export_file("*.json") var metadata_file: String = "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json":
 	set(val):
 		metadata_file = val
 		save_config()
 
-@export_file("*.tres", "*.theme") var output_file: String = "":
+@export_file("*.tres", "*.theme") var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres":
 	set(val):
 		output_file = val
 		save_config()
@@ -336,27 +336,58 @@ func load_config() -> void:
 		else:
 			printerr("Failed to migrate old config.json: ", err)
 
-	if not FileAccess.file_exists(CONFIG_FILE_PATH):
-		_config_loaded = true
-		return
-	var file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.READ)
-	if file:
-		var json_string = file.get_as_text()
-		file.close()
-		var json = JSON.new()
-		var error = json.parse(json_string)
-		if error == OK:
-			var data = json.get_data()
-			if data is Dictionary:
-				image_folder = data.get("image_folder", "")
-				fonts_folder = data.get("fonts_folder", "")
-				metadata_file = data.get("metadata_file", "")
-				output_file = data.get("output_file", "")
-				theme_parts = data.get("theme_parts", {})
-				theme_variations = data.get("theme_variations", {})
-		else:
-			printerr("Failed to parse config.json: ", json.get_error_message(), " at line ", json.get_error_line())
+	# Initialize default paths
+	var default_image_folder = "res://addons/anomalyAcesThemeGenerator/working/Images"
+	var default_fonts_folder = "res://addons/anomalyAcesThemeGenerator/working/Fonts"
+	var default_metadata_file = "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json"
+	var default_output_file = "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres"
+
+	if FileAccess.file_exists(CONFIG_FILE_PATH):
+		var file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.READ)
+		if file:
+			var json_string = file.get_as_text()
+			file.close()
+			var json = JSON.new()
+			var error = json.parse(json_string)
+			if error == OK:
+				var data = json.get_data()
+				if data is Dictionary:
+					image_folder = data.get("image_folder", "")
+					fonts_folder = data.get("fonts_folder", "")
+					metadata_file = data.get("metadata_file", "")
+					output_file = data.get("output_file", "")
+					theme_parts = data.get("theme_parts", {})
+					theme_variations = data.get("theme_variations", {})
+			else:
+				printerr("Failed to parse config.json: ", json.get_error_message(), " at line ", json.get_error_line())
+
+	# Apply fallbacks if empty
+	if image_folder.strip_edges() == "":
+		image_folder = default_image_folder
+	if fonts_folder.strip_edges() == "":
+		fonts_folder = default_fonts_folder
+	if metadata_file.strip_edges() == "":
+		metadata_file = default_metadata_file
+	if output_file.strip_edges() == "":
+		output_file = default_output_file
+
+	# Ensure the subdirectories exist
+	_ensure_dir_exists(image_folder)
+	_ensure_dir_exists(fonts_folder)
+	_ensure_dir_exists(metadata_file.get_base_dir())
+	_ensure_dir_exists(output_file.get_base_dir())
+
 	_config_loaded = true
+
+func _ensure_dir_exists(path: String) -> void:
+	if path == "":
+		return
+	if not DirAccess.dir_exists_absolute(path):
+		var err = DirAccess.make_dir_recursive_absolute(path)
+		if err == OK:
+			print("Created directory: ", path)
+		else:
+			printerr("Failed to create directory: ", path, " Error: ", err)
 
 # Parts Builder Management
 func _on_add_part_pressed() -> void:
@@ -366,6 +397,8 @@ func _on_add_part_pressed() -> void:
 	var selected_base = control_type_edit.text.strip_edges()
 	if selected_base == "":
 		printerr("Please select a base control type!")
+		push_warning("Please select a base control type!")
+		_show_warning_dialog("Please select a base control type!")
 		return
 
 	if is_custom:
@@ -412,6 +445,8 @@ func _on_add_part_pressed() -> void:
 			prop_val = rp.edited_resource.resource_path.strip_edges()
 			if prop_val == "":
 				printerr("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
+				push_warning("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
+				_show_warning_dialog("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
 				return
 
 	if is_cleared:
@@ -565,17 +600,47 @@ func build_theme() -> Theme:
 	return temp_theme
 
 # Build Native Theme Object & Preview it
+func _get_configured_states(ctrl_type: String) -> Array[String]:
+	var states: Array[String] = []
+	if not theme_parts.has(ctrl_type):
+		return ["normal"]
+		
+	var section = theme_parts[ctrl_type]
+	var has_normal_configs = false
+	
+	for sec_name in section.keys():
+		var overrides = section[sec_name]
+		for prop_name in overrides.keys():
+			var prop_lower = prop_name.to_lower()
+			if "disabled" in prop_lower:
+				if not states.has("disabled"):
+					states.append("disabled")
+			elif "pressed" in prop_lower:
+				if not states.has("pressed"):
+					states.append("pressed")
+			elif "read_only" in prop_lower:
+				if not states.has("read_only"):
+					states.append("read_only")
+			else:
+				has_normal_configs = true
+				
+	if has_normal_configs or states.is_empty():
+		states.insert(0, "normal")
+		
+	return states
+
+# Build Native Theme Object & Preview it
 func _on_apply_preview_pressed() -> void:
 	var temp_theme = build_theme()
 	preview_area.theme = temp_theme
-
+ 
 	# Update the preview nodes dynamically
 	var preview_vbox = preview_area.get_node("PreviewVBox")
 	if preview_vbox:
 		# Clear existing children
 		for child in preview_vbox.get_children():
 			child.queue_free()
-
+ 
 		if theme_parts.is_empty():
 			var placeholder = Label.new()
 			placeholder.text = "No theme parts configured yet. Add them in the Parts Builder to preview."
@@ -586,22 +651,40 @@ func _on_apply_preview_pressed() -> void:
 		else:
 			# Instantiate and add nodes that are defined in theme_parts
 			for ctrl_type in theme_parts.keys():
-				var inst: Control = null
-				var display_name = ctrl_type
-				
-				# Check if this is a custom variation
-				if theme_variations.has(ctrl_type) and theme_variations[ctrl_type] != "":
-					var base_type = theme_variations[ctrl_type]
-					inst = instantiate_class_by_name(base_type)
-					if inst:
-						inst.theme_type_variation = ctrl_type
-						display_name = ctrl_type + " (" + base_type + ")"
-				else:
-					inst = instantiate_class_by_name(ctrl_type)
+				var states = _get_configured_states(ctrl_type)
+				for state in states:
+					var inst: Control = null
+					var display_name = ctrl_type
 					
-				if inst:
-					setup_preview_node(inst, display_name)
-					preview_vbox.add_child(inst)
+					# Check if this is a custom variation
+					if theme_variations.has(ctrl_type) and theme_variations[ctrl_type] != "":
+						var base_type = theme_variations[ctrl_type]
+						inst = instantiate_class_by_name(base_type)
+						if inst:
+							inst.theme_type_variation = ctrl_type
+							display_name = ctrl_type + " (" + base_type + ")"
+					else:
+						inst = instantiate_class_by_name(ctrl_type)
+						
+					if inst:
+						# Apply state to the instantiated node
+						if state == "disabled" and "disabled" in inst:
+							inst.disabled = true
+							display_name += " (Disabled)"
+						elif state == "pressed" and "button_pressed" in inst:
+							if "toggle_mode" in inst:
+								inst.toggle_mode = true
+							inst.button_pressed = true
+							display_name += " (Pressed)"
+						elif state == "read_only":
+							if "editable" in inst:
+								inst.editable = false
+							elif "read_only" in inst:
+								inst.read_only = true
+							display_name += " (Read Only)"
+							
+						setup_preview_node(inst, display_name)
+						preview_vbox.add_child(inst)
 
 func instantiate_class_by_name(p_class: String) -> Control:
 	if ClassDB.class_exists(p_class):
@@ -874,7 +957,20 @@ func _on_resource_picker_changed(res: Resource) -> void:
 				"value": prop_val,
 				"id": override_id
 			}
+		else:
+			printerr("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
+			push_warning("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
+			_show_warning_dialog("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
 			
 	save_config()
 	refresh_parts_tree()
 	_on_apply_preview_pressed()
+
+func _show_warning_dialog(message: String) -> void:
+	var dialog = AcceptDialog.new()
+	dialog.title = "Warning"
+	dialog.dialog_text = message
+	add_child(dialog)
+	dialog.popup_centered()
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)

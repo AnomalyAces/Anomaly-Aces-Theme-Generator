@@ -1,14 +1,22 @@
 {
-	"fonts_folder": "",
-	"image_folder": "",
-	"metadata_file": "",
-	"output_file": "",
+	"fonts_folder": "res://addons/anomalyAcesThemeGenerator/working/Fonts",
+	"image_folder": "res://addons/anomalyAcesThemeGenerator/working/Images",
+	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
+	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres",
 	"theme_parts": {
+		"Button": {
+			"styleboxes": {
+				"disabled": {
+					"id": "test_button_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/disabled_button.tres"
+				}
+			}
+		},
 		"PanelContainer": {
 			"styleboxes": {
 				"panel": {
 					"id": "test_panel",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres"
 				}
 			}
 		}

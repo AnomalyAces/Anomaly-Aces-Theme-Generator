@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://bu7enomquk8vi"]
 
 [ext_resource type="Script" uid="uid://cwe3liqokj10v" path="res://addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd" id="1_theme_gen"]
-[ext_resource type="StyleBox" uid="uid://bq6j6uw4mh32j" path="res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres" id="2_pwr6p"]
+[ext_resource type="StyleBox" path="res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres" id="2_pwr6p"]
+
+[sub_resource type="Theme" id="Theme_pwr6p"]
 
 [sub_resource type="Theme" id="Theme_adaj5"]
 PanelContainer/styles/panel = ExtResource("2_pwr6p")
@@ -13,7 +15,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_pwr6p")
 script = ExtResource("1_theme_gen")
+fonts_folder = ""
+metadata_file = ""
+output_file = ""
 
 [node name="MainPanel" type="PanelContainer" parent="." unique_id=1532117646]
 unique_name_in_owner = true
