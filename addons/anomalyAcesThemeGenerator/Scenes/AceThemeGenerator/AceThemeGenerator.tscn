@@ -1,12 +1,16 @@
 [gd_scene format=3 uid="uid://bu7enomquk8vi"]
 
 [ext_resource type="Script" uid="uid://cwe3liqokj10v" path="res://addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd" id="1_theme_gen"]
-[ext_resource type="StyleBox" path="res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres" id="2_pwr6p"]
+[ext_resource type="StyleBox" uid="uid://b0op6ub47krgq" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/hover_button.tres" id="3_0e4ih"]
+[ext_resource type="StyleBox" uid="uid://c6fkbbuoy4jfo" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres" id="3_0gx42"]
+[ext_resource type="StyleBox" uid="uid://qik2pvw4jgwk" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/normal_button.tres" id="4_aymed"]
+[ext_resource type="StyleBox" uid="uid://07xsjmywxjhh" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/pressed_button.tres" id="5_c0alj"]
 
-[sub_resource type="Theme" id="Theme_pwr6p"]
-
-[sub_resource type="Theme" id="Theme_adaj5"]
-PanelContainer/styles/panel = ExtResource("2_pwr6p")
+[sub_resource type="Theme" id="Theme_0e4ih"]
+Button/styles/hover = ExtResource("3_0e4ih")
+Button/styles/normal = ExtResource("4_aymed")
+Button/styles/pressed = ExtResource("5_c0alj")
+PanelContainer/styles/panel = ExtResource("3_0gx42")
 
 [node name="AceThemeGenerator" type="Control" unique_id=342791316]
 layout_mode = 3
@@ -15,11 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_pwr6p")
 script = ExtResource("1_theme_gen")
-fonts_folder = ""
-metadata_file = ""
-output_file = ""
 
 [node name="MainPanel" type="PanelContainer" parent="." unique_id=1532117646]
 unique_name_in_owner = true
@@ -32,8 +32,8 @@ grow_vertical = 2
 
 [node name="HSplit" type="HSplitContainer" parent="MainPanel" unique_id=1898090547]
 layout_mode = 2
-split_offsets = PackedInt32Array(-384)
-split_offset = -384
+split_offsets = PackedInt32Array(-192)
+split_offset = -192
 
 [node name="LeftScroll" type="ScrollContainer" parent="MainPanel/HSplit" unique_id=725154814]
 layout_mode = 2
@@ -50,6 +50,99 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Anomaly Aces Theme Generator"
 
+[node name="SettingsPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=52220792]
+layout_mode = 2
+
+[node name="SettingsVBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel" unique_id=1625676567]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SettingsHeaderBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox" unique_id=494290401]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+toggle_mode = true
+button_pressed = true
+text = "▼ Export Settings"
+flat = true
+alignment = 0
+
+[node name="SettingsContent" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox" unique_id=1257376828]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SettingsSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent" unique_id=601727425]
+layout_mode = 2
+
+[node name="SettingsGrid" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent" unique_id=1872438777]
+layout_mode = 2
+columns = 3
+
+[node name="ImagesLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=44590437]
+layout_mode = 2
+text = "Images Folder:"
+
+[node name="ImagesEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=196521094]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "res://addons/anomalyAcesThemeGenerator/working/Images"
+placeholder_text = "res://..."
+
+[node name="ImagesBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=916333875]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="FontsLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=733616407]
+layout_mode = 2
+text = "Fonts Folder:"
+
+[node name="FontsEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=1896570921]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "res://addons/anomalyAcesThemeGenerator/working/Fonts"
+placeholder_text = "res://..."
+
+[node name="FontsBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=1922122768]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="MetadataLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=1650579849]
+layout_mode = 2
+text = "Metadata File:"
+
+[node name="MetadataEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=1217033010]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json"
+placeholder_text = "res://..."
+
+[node name="MetadataBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=690043494]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
+[node name="OutputLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=937440977]
+layout_mode = 2
+text = "Output Theme File:"
+
+[node name="OutputEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=1201582479]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres"
+placeholder_text = "res://..."
+
+[node name="OutputBrowseBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox/SettingsContent/SettingsGrid" unique_id=423829876]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse..."
+
 [node name="PartsBuilderPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1702325905]
 layout_mode = 2
 
@@ -57,104 +150,131 @@ layout_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Header" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=251194946]
+[node name="PartsBuilderHeaderBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=251194946]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Theme Parts Builder"
+toggle_mode = true
+button_pressed = true
+text = "▼ Theme Parts Builder"
+flat = true
+alignment = 0
 
-[node name="HSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1419993842]
+[node name="PartsBuilderContent" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=546950830]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1419993842]
 layout_mode = 2
 
-[node name="Grid" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=2049004809]
+[node name="Grid" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=2049004809]
 layout_mode = 2
 columns = 2
 
-[node name="OverrideNameLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=102938475]
+[node name="OverrideNameLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=102938475]
 layout_mode = 2
 text = "Name / ID:"
 
-[node name="OverrideNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=102938476]
+[node name="OverrideNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=102938476]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "e.g. primary_button_normal"
 
-[node name="BaseTypeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1422766590]
+[node name="BaseTypeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=1422766590]
 layout_mode = 2
 text = "Base / Control Type:"
 
-[node name="ControlTypeBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=21783434]
+[node name="ControlTypeBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=21783434]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ControlTypeNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid/ControlTypeBox" unique_id=21783435]
+[node name="ControlTypeNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid/ControlTypeBox" unique_id=21783435]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Select control type..."
 editable = false
 
-[node name="SelectControlTypeBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid/ControlTypeBox" unique_id=21783436]
+[node name="SelectControlTypeBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid/ControlTypeBox" unique_id=21783436]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Select..."
 
-[node name="CustomTypeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=987654319]
+[node name="CustomTypeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=987654319]
 layout_mode = 2
 text = "Custom Type?"
 
-[node name="CustomTypeCheck" type="CheckBox" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=987654320]
+[node name="CustomTypeCheck" type="CheckBox" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=987654320]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CustomNameLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=987654321]
+[node name="CustomNameLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=987654321]
 layout_mode = 2
 text = "Custom Name:"
 
-[node name="CustomTypeNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=987654322]
+[node name="CustomTypeNameEdit" type="LineEdit" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=987654322]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "e.g. MyRedButton"
 editable = false
 
-[node name="Label2" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=181081056]
+[node name="Label2" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=181081056]
 layout_mode = 2
 text = "Property Type:"
 
-[node name="PropertyTypeOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=890629819]
+[node name="PropertyTypeOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=890629819]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label3" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1309863408]
+[node name="Label3" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=1309863408]
 layout_mode = 2
 text = "Property Name:"
 
-[node name="PropertyNameOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=137335676]
+[node name="PropertyNameOption" type="OptionButton" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=137335676]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label4" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=726122678]
+[node name="Label4" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=726122678]
 layout_mode = 2
 text = "Property Value:"
 
-[node name="PropertyValueContainer" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/Grid" unique_id=1995260460]
+[node name="PropertyValueContainer" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/Grid" unique_id=1995260460]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AddPartBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1361714168]
+[node name="PartsButtonBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1555587863]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NewOverrideBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/PartsButtonBox" unique_id=1980696425]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Add / Update Theme Part"
+size_flags_horizontal = 3
+text = "New Override"
 
-[node name="TreeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=771472190]
+[node name="AddPartBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/PartsButtonBox" unique_id=1361714168]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Update Override"
+
+[node name="DuplicateOverrideBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/PartsButtonBox" unique_id=1625749041]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Duplicate Override"
+
+[node name="TreeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=771472190]
 layout_mode = 2
 text = "Configured Theme Overrides:"
 
-[node name="PartsTree" type="Tree" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=1103935351]
+[node name="PartsTree" type="Tree" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1103935351]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
@@ -182,17 +302,61 @@ text = "Generate Godot Theme"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel" unique_id=835492427]
+[node name="PreviewHeaderBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1739919011]
 layout_mode = 2
+
+[node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=835492427]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
-text = "Live Theme Preview"
+text = "Live Theme Preview (Panel Container)"
+
+[node name="ColumnsLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650074]
+layout_mode = 2
+text = "Columns:"
+
+[node name="PreviewColumnsSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=2037741243]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 6.0
+value = 5.0
 
 [node name="PreviewArea" type="PanelContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1513521225]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme = SubResource("Theme_adaj5")
+theme = SubResource("Theme_0e4ih")
 
-[node name="PreviewVBox" type="VBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea" unique_id=1995387134]
+[node name="PreviewVBox" type="VBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea" unique_id=123456789]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 15
+
+[node name="PanelContainerLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=123456780]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+theme_override_font_sizes/font_size = 12
+text = "Panel Container"
+horizontal_alignment = 1
+
+[node name="PreviewScroll" type="ScrollContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=1330070234]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewMargin" type="MarginContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll" unique_id=123456781]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 60
+theme_override_constants/margin_right = 60
+theme_override_constants/margin_bottom = 60
+
+[node name="PreviewGrid" type="GridContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll/PreviewMargin" unique_id=1609152068]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 15
+theme_override_constants/v_separation = 15
+columns = 5

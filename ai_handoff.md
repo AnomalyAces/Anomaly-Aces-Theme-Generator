@@ -6,43 +6,42 @@ This file contains the complete context, architectural choices, constraints, and
 
 ## 1. Project Context & Purpose
 The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Generator** located in `addons/anomalyAcesThemeGenerator/`. 
-* **Input**: Figma metadata files, local image resources, local fonts, and parts builder configurations.
-* **Output**: A native Godot `Theme` resource (`.tres` or `.theme` file) that can be directly applied to control nodes within the engine (instead of plain JSON outputs).
+* **Input**: Figma metadata files (`metadata.json`), local image SVG resources, local fonts, and parts builder configurations.
+* **Output**: A native Godot `Theme` resource (`.tres` or `.theme` file) that can be directly applied to control nodes within the engine.
 
 ---
 
 ## 2. Recent Implementation & Completed Work
 
-### A. Configuration Staging Relocation
-* Moved the plugin's internal configuration state file from the addon root path `res://addons/anomalyAcesThemeGenerator/config.json` to a dedicated subfolder: `res://addons/anomalyAcesThemeGenerator/working/config.json`.
-* Implemented automatic configuration migration: if an old config is found on startup, it is copied to the new `working/` folder and the old one is deleted.
-* **Constraint**: The `working/` folder is **not** added to `.gitignore` so users can share their settings/stage data across multiple PCs.
+### A. Configuration Suffix Cleanup & Duplicate Pruning
+* Grouped all theme parts keys by base name on load/save in `_cleanup_unique_properties()`.
+* Automatically strips copy-suffixes (like `normal_copy` -> `normal`) from unique properties.
+* Keeps the active copy during editing but automatically prunes stale/inactive duplicate override keys on configuration load/save, resolving duplicate configuration bloat.
 
-### B. Default Export Settings & Auto-Directory Creation
-* Created appropriately named subfolders inside the `working/` directory for default export settings:
-  * **Images**: `res://addons/anomalyAcesThemeGenerator/working/Images`
-  * **Fonts**: `res://addons/anomalyAcesThemeGenerator/working/Fonts`
-  * **Metadata**: `res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json`
-  * **Themes**: `res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres`
-* On startup, the `load_config()` script automatically checks if these settings are empty or missing. If so, it falls back to these defaults and recursively creates the directories on disk via `DirAccess.make_dir_recursive_absolute()` to prevent reference errors.
+### B. Metadata-Based StyleBox Builder (Opt-In Checkbox)
+* Added a `"Build from Metadata"` checkbox dynamically positioned right under the `"Property Type"` dropdown in the Parts Builder.
+* Visible only for `StyleBox` property types. When opted-in, displays a dropdown containing SVG elements from `metadata.json` and a `"Build..."` compilation button.
+* **Overwriting Safety Guard**: Aborts and prevents overwriting of values if the build checkbox is not checked.
+* **StyleBox Auto-Generation**:
+  * **With Drop Shadow**: If the SVG entry in `metadata.json` has a `DROP_SHADOW` effect, builds a programmatically styled `StyleBoxFlat` with capsule corners (half of SVG height), border width of 2, a solid background color parsed from Figma fills (with fallback to semi-transparent dark charcoal), a neon border/shadow color, and a dynamically scaled shadow opacity based on Figma blur radius:
+    $$\text{Alpha Scale} = \text{clamp}\left(\frac{12.0}{\text{Figma Radius}}, 0.15, 1.0\right)$$
+    This formula mathematically converts Figma's diffuse web blurs to Godot's shadow falloff gradient.
+  * **Standard Vector**: If no drop shadow is present, builds a `StyleBoxTexture` utilizing the SVG directly.
+  * Enforces standard button margins (`L=6, R=6, T=4, B=4`).
 
-### C. Live Property Auto-Saving
-* Removed the need for manual save buttons. Edits to colors, values, resource paths, or overrides in the UI automatically trigger signals (`color_changed`, `value_changed`, `resource_changed`, `text_changed`) which instantly serialize updates to `working/config.json`.
+### C. In-Memory Cache Invalidation
+* Programmed the stylebox builder to reload generated resource files utilizing Godot's `ResourceLoader.CACHE_MODE_REPLACE` mode. This invalidates the cached resource in memory, allowing changes (e.g. converting a stylebox from texture to flat, or changing shadow size/radius) to propagate instantly inside the Godot editor viewport without reloading the project.
 
-### D. State-Specific Live Preview Nodes
-* Created a helper function `_get_configured_states(ctrl_type)` that scans the configured override properties for any given control type.
-* In the live preview panel (`_on_apply_preview_pressed()`), we instantiate separate preview controls side-by-side or stacked for each state configured by the user:
-  * **Normal**: Default state button.
-  * **Disabled**: Enforces `disabled = true` if disabled theme properties (e.g. `disabled` StyleBox or `font_disabled_color`) are configured.
-  * **Pressed**: Enforces `button_pressed = true` (and activates `toggle_mode = true` so the button stays pressed) if pressed theme properties are configured.
-  * **Read-Only**: Enforces `editable = false` / `read_only = true` on text inputs.
-* This allows users to inspect exactly how hover/normal, pressed, and disabled states will look concurrently.
+### D. Parent Panel Container Live Preview
+* Reverted wrapping individual preview controls in cards. The preview controls are added directly to the preview grid container.
+* Restructured `PreviewArea` (which is a `PanelContainer` styled by the theme currently being compiled) to hold a `VBoxContainer` with a subtle `"Panel Container"` Label at the top and the ScrollContainer below (with 15px separation).
+* Wrapped the inner `PreviewGrid` inside a `MarginContainer` with **60px margins on all sides** so neon glows and shadow offsets do not get clipped by the ScrollContainer boundaries.
 
-### E. Visual Warning Dialogs (`AcceptDialog`)
-* Implemented an on-the-fly warning dialog popup (`_show_warning_dialog(message)`) to catch issues interactively in the Godot Editor.
-* Dialog triggers:
-  1. If a user clicks `Add Part` without choosing a base control type.
-  2. If a user tries to assign/use an in-memory resource that has not been saved to a file on disk first (which has an empty `resource_path`). This is checked in both the `Add Part` button click and the real-time resource-changed signal handler.
+### E. Headless & Non-Editor Test Fallbacks
+* Replaced direct editor-only `EditorResourcePicker` instantiations with a conditional fallback to `Button` when running headlessly or outside the editor, preventing crashes during automated CI/CD testing.
+
+### F. Workspace Test Safety
+* Implemented `config.json` backup and restore logic inside `test_stylebox_builder.gd` to prevent automated tests from permanently polluting or corrupting local workspace settings.
 
 ---
 
@@ -60,10 +59,10 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 ---
 
 ## 4. File Map & Locations
-* **Main Generator Logic**: [AceThemeGenerator.gd](file:///C:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
-* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///C:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
-* **Internal State config**: `addons/anomalyAcesThemeGenerator/working/config.json`
-* **Plugin Configuration**: `addons/anomalyAcesThemeGenerator/plugin.cfg`
+* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
+* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
+* **Internal State config**: [config.json](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
+* **Plugin Configuration**: [plugin.cfg](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
 
 ---
 

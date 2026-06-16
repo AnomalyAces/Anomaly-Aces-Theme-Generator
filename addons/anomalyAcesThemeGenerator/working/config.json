@@ -3,12 +3,25 @@
 	"image_folder": "res://addons/anomalyAcesThemeGenerator/working/Images",
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres",
+	"preview_columns": 5,
 	"theme_parts": {
 		"Button": {
 			"styleboxes": {
 				"disabled": {
 					"id": "test_button_disabled",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/disabled_button.tres"
+				},
+				"hover": {
+					"id": "test_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/hover_button.tres"
+				},
+				"normal": {
+					"id": "test_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/normal_button.tres"
+				},
+				"pressed": {
+					"id": "test_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/pressed_button.tres"
 				}
 			}
 		},
@@ -16,7 +29,7 @@
 			"styleboxes": {
 				"panel": {
 					"id": "test_panel",
-					"value": "res://addons/anomalyAcesThemeGenerator/ThemeFiles/test_panel_stylebox.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres"
 				}
 			}
 		}
