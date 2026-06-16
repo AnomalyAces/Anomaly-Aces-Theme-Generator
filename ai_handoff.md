@@ -43,6 +43,11 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 ### F. Workspace Test Safety
 * Implemented `config.json` backup and restore logic inside `test_stylebox_builder.gd` to prevent automated tests from permanently polluting or corrupting local workspace settings.
 
+### G. UI Scaling and Layout Improvements
+* **Editor Theme Inheritance**: Assigned the main theme generator instance's `theme` property to the editor's base control theme, letting the plugin inherit native styling, fonts, and DPI scaling automatically.
+* **Dynamic Override Font Scaling**: Implemented dynamic scaling of hardcoded font size overrides and tree heights in `AceThemeGenerator.gd` using `EditorInterface.get_editor_scale()`.
+* **Configured Overrides Expansion**: Enabled vertical size flags (`size_flags_vertical = 3`) on `PartsBuilderPanel`, its nested `VBox`/`PartsBuilderContent` containers, and `PartsTree` itself to stretch it to fill the remaining height of the left panel.
+
 ---
 
 ## 3. Key Godot 4.6 Constraints & Gotchas
@@ -59,10 +64,10 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 ---
 
 ## 4. File Map & Locations
-* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
-* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
-* **Internal State config**: [config.json](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
-* **Plugin Configuration**: [plugin.cfg](file:///c:/Anomaly Aces/Plugins/4.x/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
+* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
+* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
+* **Internal State config**: [config.json](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
+* **Plugin Configuration**: [plugin.cfg](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
 
 ---
 

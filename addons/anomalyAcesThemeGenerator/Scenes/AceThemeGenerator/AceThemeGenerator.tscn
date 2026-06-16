@@ -1,15 +1,11 @@
 [gd_scene format=3 uid="uid://bu7enomquk8vi"]
 
 [ext_resource type="Script" uid="uid://cwe3liqokj10v" path="res://addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd" id="1_theme_gen"]
-[ext_resource type="StyleBox" uid="uid://b0op6ub47krgq" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/hover_button.tres" id="3_0e4ih"]
+[ext_resource type="StyleBox" uid="uid://dk5e2ra6grwsp" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/disabled_button.tres" id="2_adaj5"]
 [ext_resource type="StyleBox" uid="uid://c6fkbbuoy4jfo" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres" id="3_0gx42"]
-[ext_resource type="StyleBox" uid="uid://qik2pvw4jgwk" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/normal_button.tres" id="4_aymed"]
-[ext_resource type="StyleBox" uid="uid://07xsjmywxjhh" path="res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/pressed_button.tres" id="5_c0alj"]
 
-[sub_resource type="Theme" id="Theme_0e4ih"]
-Button/styles/hover = ExtResource("3_0e4ih")
-Button/styles/normal = ExtResource("4_aymed")
-Button/styles/pressed = ExtResource("5_c0alj")
+[sub_resource type="Theme" id="Theme_adaj5"]
+Button/styles/disabled = ExtResource("2_adaj5")
 PanelContainer/styles/panel = ExtResource("3_0gx42")
 
 [node name="AceThemeGenerator" type="Control" unique_id=342791316]
@@ -47,7 +43,7 @@ theme_override_constants/separation = 15
 
 [node name="TitleLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1276942304]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 40
 text = "Anomaly Aces Theme Generator"
 
 [node name="SettingsPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=52220792]
@@ -60,7 +56,7 @@ theme_override_constants/separation = 8
 [node name="SettingsHeaderBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox" unique_id=494290401]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 28
 toggle_mode = true
 button_pressed = true
 text = "▼ Export Settings"
@@ -145,15 +141,17 @@ text = "Browse..."
 
 [node name="PartsBuilderPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1702325905]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="VBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel" unique_id=648522947]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
 [node name="PartsBuilderHeaderBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=251194946]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 28
 toggle_mode = true
 button_pressed = true
 text = "▼ Theme Parts Builder"
@@ -163,6 +161,7 @@ alignment = 0
 [node name="PartsBuilderContent" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox" unique_id=546950830]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
 [node name="HSeparator" type="HSeparator" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1419993842]
@@ -276,8 +275,9 @@ text = "Configured Theme Overrides:"
 
 [node name="PartsTree" type="Tree" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1103935351]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
+size_flags_vertical = 3
 columns = 4
 column_titles_visible = true
 hide_root = true
@@ -308,7 +308,7 @@ layout_mode = 2
 [node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=835492427]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 32
 text = "Live Theme Preview (Panel Container)"
 
 [node name="ColumnsLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650074]
@@ -326,7 +326,7 @@ value = 5.0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme = SubResource("Theme_0e4ih")
+theme = SubResource("Theme_adaj5")
 
 [node name="PreviewVBox" type="VBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea" unique_id=123456789]
 layout_mode = 2
@@ -335,7 +335,7 @@ theme_override_constants/separation = 15
 [node name="PanelContainerLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=123456780]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 24
 text = "Panel Container"
 horizontal_alignment = 1
 

@@ -209,6 +209,41 @@ func setup_ui() -> void:
 	if preview_header:
 		preview_header.text = "Live Theme Preview (Panel Container)"
 
+	_apply_editor_scaling()
+
+func _apply_editor_scaling() -> void:
+	if not Engine.is_editor_hint():
+		return
+		
+	var scale = EditorInterface.get_editor_scale()
+	if scale == 1.0:
+		return
+		
+	print("Applying editor scaling of ", scale, " to AceThemeGenerator UI.")
+	
+	# Scale font sizes for nodes that have hardcoded overrides in the tscn
+	var title_lbl = $MainPanel/HSplit/LeftScroll/LeftBox/TitleLabel
+	if title_lbl:
+		title_lbl.add_theme_font_size_override("font_size", int(20 * scale))
+		
+	if settings_header_btn:
+		settings_header_btn.add_theme_font_size_override("font_size", int(14 * scale))
+		
+	if parts_builder_header_btn:
+		parts_builder_header_btn.add_theme_font_size_override("font_size", int(14 * scale))
+		
+	var preview_header_lbl = preview_area.get_parent().get_node_or_null("PreviewHeaderBox/PreviewHeader") as Label
+	if preview_header_lbl:
+		preview_header_lbl.add_theme_font_size_override("font_size", int(16 * scale))
+		
+	var panel_label = preview_area.get_node_or_null("PreviewVBox/PanelContainerLabel") as Label
+	if panel_label:
+		panel_label.add_theme_font_size_override("font_size", int(12 * scale))
+		
+	# Scale minimum sizes of specific controls to match DPI scaling
+	if parts_tree:
+		parts_tree.custom_minimum_size = Vector2(0, int(150 * scale))
+
 func _on_select_control_type_pressed() -> void:
 	print("AceThemeGenerator _on_select_control_type_pressed() called. is_editor_hint: ", Engine.is_editor_hint())
 	if Engine.is_editor_hint():
