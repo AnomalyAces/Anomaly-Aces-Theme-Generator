@@ -4,3 +4,8 @@
 /addons/anomalyAcesAddonManager/temp/github
 /addons/addonInstalls.cfg
 /addons/*.zip
+
+# Ignore all subdirectories in addons/ except anomalyAcesThemeGenerator/
+/addons/*/
+!/addons/anomalyAcesThemeGenerator/
+

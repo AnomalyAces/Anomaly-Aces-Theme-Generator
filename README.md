@@ -4,21 +4,18 @@ Given a collection of assets and a JSON file with metadata, this project creates
 
 ## Getting Started
 
-### Prerequisites
+### Prerequisites & Dependencies Installation
 
-This project utilizes the **Anomaly Aces Addon Manager** and its associated utilities.
+This project depends on the **Anomaly Aces Addon Manager** and its companion utilities (`anomalyAcesLog`, `anomalyAcesTable`, `anomalyAcesUtil`). Because these dependency folders are gitignored in this repository, you must install them before enabling the plugins in Godot.
 
-#### Installation of Addon Manager
+To install the dependencies:
+1. Ensure the `anomalyAcesAddonManager` folder is placed inside your `addons/` directory.
+2. Follow the bootstrap and installation instructions inside [INSTALL.md](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesAddonManager/INSTALL.md) of the `anomalyAcesAddonManager` folder to download and install all companion addon dependencies automatically.
 
-The addons were installed by adding all the subfolders in the `addons` folder from the GitHub repository:
-[Anomaly-Aces-Addon-Manager](https://github.com/AnomalyAces/Anomaly-Aces-Addon-Manager)
-
-The following addons are included in this project:
-- `anomalyAcesAddonManager`: The core Addon Manager tool.
+The dependencies managed by the addon manager are:
 - `anomalyAcesLog`: Logger utility for Anomaly Aces projects.
 - `anomalyAcesTable`: Table data structure and presentation utilities.
 - `anomalyAcesUtil`: Common utilities and helpers.
-- `anomalyAcesThemeGenerator`: The entry point for the Theme Generator itself.
 
 > [!NOTE]
 > In the near future, you will be able to install and update the **Anomaly Aces Addon Manager** directly from the **Godot Asset Library / Store**.

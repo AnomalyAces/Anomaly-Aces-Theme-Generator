@@ -45,6 +45,7 @@ var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes
 @onready var preview_columns_spin: SpinBox = %PreviewColumnsSpin
 @onready var new_override_btn: Button = %NewOverrideBtn
 @onready var duplicate_override_btn: Button = %DuplicateOverrideBtn
+@onready var delete_override_btn: Button = %DeleteOverrideBtn
 
 # Data model for custom theme overrides (Theme Parts)
 # Structure: { "Button": { "colors": { "font_color": { "value": Color, "id": String } } } }
@@ -188,6 +189,7 @@ func setup_ui() -> void:
 	%AddPartBtn.pressed.connect(_on_add_part_pressed)
 	%NewOverrideBtn.pressed.connect(_on_new_override_pressed)
 	%DuplicateOverrideBtn.pressed.connect(_on_duplicate_override_pressed)
+	%DeleteOverrideBtn.pressed.connect(_on_delete_override_pressed)
 	%ApplyPreviewBtn.pressed.connect(_on_apply_preview_pressed)
 	%CompileBtn.pressed.connect(_on_compile_pressed)
 	parts_tree.item_selected.connect(_on_tree_item_selected)
@@ -675,6 +677,43 @@ func _on_duplicate_override_pressed() -> void:
 	}
 	
 	_active_prop_key = new_key
+	save_config()
+	refresh_parts_tree()
+	_on_apply_preview_pressed()
+
+func _on_delete_override_pressed() -> void:
+	if not _config_loaded:
+		if is_inside_tree() and Engine.is_editor_hint():
+			load_config()
+		else:
+			return
+
+	var item = parts_tree.get_selected()
+	if not item:
+		return
+
+	var meta = item.get_metadata(0)
+	if not (meta is Dictionary and meta.has("control_type")):
+		return
+
+	var ctrl_type = meta["control_type"]
+	var sec_name = meta["sec_name"]
+	var prop_name = meta["prop_name"]
+
+	if theme_parts.has(ctrl_type) and theme_parts[ctrl_type].has(sec_name) and theme_parts[ctrl_type][sec_name].has(prop_name):
+		theme_parts[ctrl_type][sec_name].erase(prop_name)
+		if theme_parts[ctrl_type][sec_name].is_empty():
+			theme_parts[ctrl_type].erase(sec_name)
+		if theme_parts[ctrl_type].is_empty():
+			theme_parts.erase(ctrl_type)
+			if theme_variations.has(ctrl_type):
+				theme_variations.erase(ctrl_type)
+
+	_active_prop_key = ""
+	if override_name_edit:
+		override_name_edit.text = ""
+
+	update_value_input_control()
 	save_config()
 	refresh_parts_tree()
 	_on_apply_preview_pressed()

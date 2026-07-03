@@ -269,6 +269,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Duplicate Override"
 
+[node name="DeleteOverrideBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/PartsButtonBox" unique_id=1625749042]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Delete Override"
+
 [node name="TreeLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=771472190]
 layout_mode = 2
 text = "Configured Theme Overrides:"
