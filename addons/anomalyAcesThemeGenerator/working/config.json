@@ -9,8 +9,9 @@
 		"BackButton_disabled": "",
 		"BackButton_normal": "",
 		"BackButton_pressed": "",
-		"Button_disabled": "Button (Disabled)",
-		"Button_normal": "Button"
+		"Button_disabled": "Disabled",
+		"Button_normal": "Button",
+		"Button_pressed": "Pressed"
 	},
 	"theme_parts": {
 		"BackButton": {
