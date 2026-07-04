@@ -53,8 +53,12 @@ var theme_parts: Dictionary = {}
 var theme_variations: Dictionary = {}
 var _config_loaded: bool = false
 var preview_columns: int = 3
+var preview_item_width: int = 200
+var preview_item_width_spin: SpinBox
+var preview_texts: Dictionary = {}
 var _target_select_meta = null
 var _active_prop_key: String = ""
+var _creating_new_override: bool = false
 
 # Metadata stylebox builder controls (positioned right after Custom Name in Grid)
 var metadata_build_check: CheckBox
@@ -210,7 +214,29 @@ func setup_ui() -> void:
 	var preview_header = preview_area.get_parent().get_node("PreviewHeaderBox/PreviewHeader") as Label
 	if preview_header:
 		preview_header.text = "Live Theme Preview (Panel Container)"
-
+		
+	# Dynamic creation of Preview Item Width controls in PreviewHeaderBox
+	var header_box = preview_area.get_parent().get_node_or_null("PreviewHeaderBox")
+	if header_box:
+		# Add separator
+		var sep = Control.new()
+		sep.custom_minimum_size = Vector2(10, 0)
+		header_box.add_child(sep)
+		
+		var width_label = Label.new()
+		width_label.text = "Item Width:"
+		header_box.add_child(width_label)
+		
+		preview_item_width_spin = SpinBox.new()
+		preview_item_width_spin.name = "PreviewItemWidthSpin"
+		preview_item_width_spin.min_value = 0
+		preview_item_width_spin.max_value = 2000
+		preview_item_width_spin.step = 10
+		preview_item_width_spin.value = preview_item_width
+		preview_item_width_spin.custom_minimum_size = Vector2(80, 0)
+		preview_item_width_spin.value_changed.connect(_on_preview_item_width_changed)
+		header_box.add_child(preview_item_width_spin)
+		
 	_apply_editor_scaling()
 
 func _apply_editor_scaling() -> void:
@@ -242,9 +268,10 @@ func _apply_editor_scaling() -> void:
 	if panel_label:
 		panel_label.add_theme_font_size_override("font_size", int(12 * scale))
 		
-	# Scale minimum sizes of specific controls to match DPI scaling
 	if parts_tree:
 		parts_tree.custom_minimum_size = Vector2(0, int(150 * scale))
+	if preview_item_width_spin:
+		preview_item_width_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 
 func _on_select_control_type_pressed() -> void:
 	print("AceThemeGenerator _on_select_control_type_pressed() called. is_editor_hint: ", Engine.is_editor_hint())
@@ -265,9 +292,14 @@ func _on_control_type_selected(type_name: StringName) -> void:
 	if type_str != "":
 		control_type_edit.text = type_str
 		_active_prop_key = ""
+		_creating_new_override = true
 		update_property_types()
 
 func update_property_types() -> void:
+	var previous_type_text = ""
+	if prop_type_option.selected != -1:
+		previous_type_text = prop_type_option.get_item_text(prop_type_option.selected)
+
 	prop_type_option.clear()
 	prop_name_option.clear()
 	
@@ -306,11 +338,25 @@ func update_property_types() -> void:
 	if has_styleboxes:
 		prop_type_option.add_item("StyleBox")
 		
-	if prop_type_option.item_count > 0:
+	var reselected = false
+	if previous_type_text != "":
+		for i in range(prop_type_option.item_count):
+			if prop_type_option.get_item_text(i) == previous_type_text:
+				prop_type_option.selected = i
+				reselected = true
+				break
+				
+	if not reselected and prop_type_option.item_count > 0:
 		prop_type_option.selected = 0
+		
+	if prop_type_option.selected != -1:
 		update_property_names()
 
 func update_property_names() -> void:
+	var previous_name_text = ""
+	if prop_name_option.selected != -1:
+		previous_name_text = prop_name_option.get_item_text(prop_name_option.selected)
+
 	prop_name_option.clear()
 	
 	var selected_type = control_type_edit.text.strip_edges()
@@ -348,6 +394,17 @@ func update_property_names() -> void:
 	for n in names:
 		prop_name_option.add_item(n)
 		
+	var reselected = false
+	if previous_name_text != "":
+		for i in range(prop_name_option.item_count):
+			if prop_name_option.get_item_text(i) == previous_name_text:
+				prop_name_option.selected = i
+				reselected = true
+				break
+				
+	if not reselected:
+		prop_name_option.selected = -1
+
 	update_value_input_control()
 
 func update_value_input_control() -> void:
@@ -403,7 +460,9 @@ func update_value_input_control() -> void:
 		override_name_edit.text = ext_id
 		raw_val = _get_part_value(existing_val)
 	else:
-		override_name_edit.text = ""
+		# Preserve the custom override name/ID if creating a new override from scratch
+		if parts_tree == null or parts_tree.get_selected() != null:
+			override_name_edit.text = ""
 
 	match prop_type:
 		"color":
@@ -469,13 +528,16 @@ func update_value_input_control() -> void:
 		if prop_type == "stylebox":
 			metadata_build_label.visible = true
 			metadata_build_check.visible = true
+			var pressed = metadata_build_check.button_pressed
+			if metadata_file_label: metadata_file_label.visible = pressed
+			if metadata_builder_box: metadata_builder_box.visible = pressed
 			_refresh_metadata_dropdown()
 		else:
 			metadata_build_label.visible = false
 			metadata_build_check.visible = false
-			metadata_file_label.visible = false
-			metadata_builder_box.visible = false
-		metadata_build_check.button_pressed = false
+			if metadata_file_label: metadata_file_label.visible = false
+			if metadata_builder_box: metadata_builder_box.visible = false
+			metadata_build_check.button_pressed = false
 
 # Config Load/Save
 func save_config() -> void:
@@ -493,7 +555,9 @@ func save_config() -> void:
 		"output_file": output_file,
 		"theme_parts": theme_parts,
 		"theme_variations": theme_variations,
-		"preview_columns": preview_columns
+		"preview_columns": preview_columns,
+		"preview_item_width": preview_item_width,
+		"preview_texts": preview_texts
 	}
 	var file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.WRITE)
 	if file:
@@ -538,6 +602,8 @@ func load_config() -> void:
 					theme_parts = data.get("theme_parts", {})
 					theme_variations = data.get("theme_variations", {})
 					preview_columns = int(data.get("preview_columns", 3))
+					preview_item_width = int(data.get("preview_item_width", 200))
+					preview_texts = data.get("preview_texts", {})
 			else:
 				printerr("Failed to parse config.json: ", json.get_error_message(), " at line ", json.get_error_line())
 
@@ -569,6 +635,8 @@ func load_config() -> void:
 
 	if preview_columns_spin:
 		preview_columns_spin.value = preview_columns
+	if preview_item_width_spin:
+		preview_item_width_spin.value = preview_item_width
 
 	_config_loaded = true
 	_cleanup_unique_properties()
@@ -581,7 +649,9 @@ func load_config() -> void:
 		"output_file": output_file,
 		"theme_parts": theme_parts,
 		"theme_variations": theme_variations,
-		"preview_columns": preview_columns
+		"preview_columns": preview_columns,
+		"preview_item_width": preview_item_width,
+		"preview_texts": preview_texts
 	}
 	var save_file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.WRITE)
 	if save_file:
@@ -604,6 +674,9 @@ func _ensure_dir_exists(path: String) -> void:
 # Parts Builder Management
 func _on_new_override_pressed() -> void:
 	_active_prop_key = ""
+	_creating_new_override = true
+	if metadata_build_check:
+		metadata_build_check.button_pressed = false
 	if parts_tree:
 		parts_tree.deselect_all()
 	if override_name_edit:
@@ -710,6 +783,7 @@ func _on_delete_override_pressed() -> void:
 				theme_variations.erase(ctrl_type)
 
 	_active_prop_key = ""
+	_creating_new_override = true
 	if override_name_edit:
 		override_name_edit.text = ""
 
@@ -996,6 +1070,19 @@ func _on_apply_preview_pressed() -> void:
 	var temp_theme = build_theme()
 	preview_area.theme = temp_theme
  
+	# Load metadata to retrieve component design width/height
+	var metadata = {}
+	if FileAccess.file_exists(metadata_file):
+		var file = FileAccess.open(metadata_file, FileAccess.READ)
+		if file:
+			var json = JSON.new()
+			var err = json.parse(file.get_as_text())
+			file.close()
+			if err == OK:
+				var data = json.get_data()
+				if data is Dictionary:
+					metadata = data
+
 	# Update the preview nodes dynamically
 	if preview_grid:
 		# Clear existing children
@@ -1004,6 +1091,7 @@ func _on_apply_preview_pressed() -> void:
  
 		if theme_parts.is_empty():
 			preview_grid.columns = 1
+			preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var placeholder = Label.new()
 			placeholder.text = "No theme parts configured yet. Add them in the Parts Builder to preview."
 			placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1012,12 +1100,65 @@ func _on_apply_preview_pressed() -> void:
 			placeholder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			preview_grid.add_child(placeholder)
 		else:
+			if preview_item_width > 0:
+				preview_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			else:
+				preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			preview_grid.columns = preview_columns
 			# Instantiate and add nodes that are defined in theme_parts
 			for ctrl_type in theme_parts.keys():
 				if ctrl_type == "PanelContainer":
 					continue
 				var states = _get_configured_states(ctrl_type)
+				
+				# Find a common design size from any state of this control type to use as fallback
+				var common_width = 0.0
+				var common_height = 0.0
+				for s in states:
+					if theme_parts.has(ctrl_type) and theme_parts[ctrl_type].has("styleboxes"):
+						var sboxes = theme_parts[ctrl_type]["styleboxes"]
+						var rec = null
+						for key in sboxes.keys():
+							if _get_base_prop_name(key) == s:
+								rec = sboxes[key]
+								break
+						
+						if rec != null:
+							var svg_key = ""
+							var val_path = _get_part_value(rec)
+							if val_path is String and val_path != "" and ResourceLoader.exists(val_path):
+								var sb = ResourceLoader.load(val_path)
+								if sb is StyleBoxTexture and sb.texture:
+									svg_key = sb.texture.resource_path.get_file()
+							
+							if svg_key == "":
+								var record_id = _get_part_id(rec)
+								record_id = _get_base_prop_name(record_id)
+								if record_id != "":
+									svg_key = record_id + ".svg"
+							
+							if svg_key == "" and val_path is String and val_path != "":
+								var filename = val_path.get_file().replace("_stylebox.tres", "")
+								filename = _get_base_prop_name(filename)
+								svg_key = filename + ".svg"
+							
+							if svg_key != "":
+								var meta_entry = null
+								if metadata.has(svg_key):
+									meta_entry = metadata[svg_key]
+								else:
+									var lower_key = svg_key.to_lower()
+									for m_key in metadata.keys():
+										if m_key.to_lower() == lower_key or m_key.to_lower().replace(".svg", "") == lower_key.replace(".svg", ""):
+											meta_entry = metadata[m_key]
+											break
+								
+								if meta_entry != null:
+									common_width = float(meta_entry.get("width", 0.0))
+									common_height = float(meta_entry.get("height", 0.0))
+									if common_width > 0.0:
+										break
+										
 				for state in states:
 					var inst: Control = null
 					var display_name = ctrl_type
@@ -1049,8 +1190,84 @@ func _on_apply_preview_pressed() -> void:
 								inst.read_only = true
 							display_name += " (Read Only)"
 							
-						setup_preview_node(inst, display_name)
-						inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+						var text_key = ctrl_type + "_" + state
+						var item_text = display_name
+						if preview_texts.has(text_key):
+							item_text = preview_texts[text_key]
+							
+						# Fetch design size from Figma metadata (handles copy key suffix and path mapping)
+						var design_width = 0.0
+						var design_height = 0.0
+						if theme_parts.has(ctrl_type) and theme_parts[ctrl_type].has("styleboxes"):
+							var sboxes = theme_parts[ctrl_type]["styleboxes"]
+							var record = null
+							for key in sboxes.keys():
+								if _get_base_prop_name(key) == state:
+									record = sboxes[key]
+									break
+							
+							if record != null:
+								var svg_key = ""
+								var val_path = _get_part_value(record)
+								if val_path is String and val_path != "" and ResourceLoader.exists(val_path):
+									var sb = ResourceLoader.load(val_path)
+									if sb is StyleBoxTexture and sb.texture:
+										svg_key = sb.texture.resource_path.get_file()
+								
+								if svg_key == "":
+									var record_id = _get_part_id(record)
+									record_id = _get_base_prop_name(record_id)
+									if record_id != "":
+										svg_key = record_id + ".svg"
+								
+								if svg_key == "" and val_path is String and val_path != "":
+									var filename = val_path.get_file().replace("_stylebox.tres", "")
+									filename = _get_base_prop_name(filename)
+									svg_key = filename + ".svg"
+								
+								# Retrieve dimensions from figma metadata
+								if svg_key != "":
+									if metadata.has(svg_key):
+										var meta_entry = metadata[svg_key]
+										design_width = float(meta_entry.get("width", 0.0))
+										design_height = float(meta_entry.get("height", 0.0))
+									else:
+										# Case-insensitive/extension-agnostic fallback
+										var lower_key = svg_key.to_lower()
+										for m_key in metadata.keys():
+											if m_key.to_lower() == lower_key or m_key.to_lower().replace(".svg", "") == lower_key.replace(".svg", ""):
+												var meta_entry = metadata[m_key]
+												design_width = float(meta_entry.get("width", 0.0))
+												design_height = float(meta_entry.get("height", 0.0))
+												break
+								
+						if design_width == 0.0 and common_width > 0.0:
+							design_width = common_width
+							design_height = common_height
+							
+						setup_preview_node(inst, item_text)
+						
+						# Apply sizing and shrink centering appropriately
+						if preview_item_width > 0:
+							inst.custom_minimum_size = Vector2(preview_item_width, design_height if design_height > 0 else 40.0)
+							inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+							if "clip_text" in inst:
+								inst.clip_text = true
+						else:
+							if design_width > 0 and design_height > 0:
+								inst.custom_minimum_size = Vector2(design_width, design_height)
+								inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+								if "clip_text" in inst:
+									inst.clip_text = true
+							else:
+								inst.custom_minimum_size = Vector2(0, 40.0)
+								inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+						
+						# Store metadata for editing and persistence
+						inst.set_meta("ctrl_type", ctrl_type)
+						inst.set_meta("state", state)
+						
+						inst.gui_input.connect(_on_preview_item_gui_input.bind(inst))
 						preview_grid.add_child(inst)
 
 func instantiate_class_by_name(p_class: String) -> Control:
@@ -1127,6 +1344,9 @@ func _on_tree_item_selected() -> void:
 		var prop_name = meta["prop_name"]
 		
 		_active_prop_key = prop_name
+		_creating_new_override = false
+		if metadata_build_check:
+			metadata_build_check.button_pressed = false
 		
 		# 1. Update Control Type and Custom Checkboxes
 		if theme_variations.has(ctrl_type):
@@ -1465,6 +1685,7 @@ func _reimport_svgs_as_dpi_textures(dir_path: String) -> void:
 		
 	var modified_files: Array[String] = []
 	for file_path in files_to_reimport:
+		_clean_svg_filters(file_path)
 		var import_path = file_path + ".import"
 		var needs_modify = true
 		var config = ConfigFile.new()
@@ -1518,9 +1739,34 @@ func _on_process_frame_reimport() -> void:
 		print("Reimport completed.")
 		_pending_modified_files.clear()
 
+func _clean_svg_filters(file_path: String) -> void:
+	if not FileAccess.file_exists(file_path):
+		return
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		return
+	var content = file.get_as_text()
+	file.close()
+	
+	var regex = RegEx.new()
+	var err = regex.compile("filter=[\"']url\\(#[^\"']*\\)[\"']")
+	if err != OK:
+		return
+		
+	var new_content = regex.sub(content, "", true)
+	if new_content != content:
+		var write_file = FileAccess.open(file_path, FileAccess.WRITE)
+		if write_file:
+			write_file.store_string(new_content)
+			write_file.close()
+			print("Cleaned unsupported filters from SVG: ", file_path)
+
 # Signal callbacks to avoid lambdas and prevent Engine Stack Underflow Bug
 func _on_prop_type_selected(index: int) -> void:
 	_active_prop_key = ""
+	_creating_new_override = true
+	if metadata_build_check:
+		metadata_build_check.button_pressed = false
 	update_property_names()
 
 func _on_prop_name_selected(index: int) -> void:
@@ -1569,7 +1815,36 @@ func _on_prop_name_selected(index: int) -> void:
 					return
 			else:
 				_active_prop_key = ""
+				_creating_new_override = true
 				
+	if _active_prop_key == "" or _creating_new_override:
+		var ctrl_type = control_type_edit.text.strip_edges()
+		if custom_type_check.button_pressed and custom_type_name_edit.text.strip_edges() != "":
+			ctrl_type = custom_type_name_edit.text.strip_edges()
+			
+		var prop_type = prop_type_option.get_item_text(prop_type_option.selected).to_lower().replace(" ", "_")
+		var section_map = {
+			"color": "colors",
+			"constant": "constants",
+			"font": "fonts",
+			"font_size": "font_sizes",
+			"icon": "icons",
+			"stylebox": "styleboxes"
+		}
+		var sec = section_map.get(prop_type, "")
+		
+		var check_key = selected_name
+		if sec != "" and theme_parts.has(ctrl_type) and theme_parts[ctrl_type].has(sec):
+			if theme_parts[ctrl_type][sec].has(check_key):
+				var counter = 1
+				check_key = selected_name + "_copy"
+				while theme_parts[ctrl_type][sec].has(check_key):
+					counter += 1
+					check_key = selected_name + "_copy_" + str(counter)
+		
+		_active_prop_key = check_key
+		_creating_new_override = false
+
 	update_value_input_control()
 
 func _on_custom_type_toggled(pressed: bool) -> void:
@@ -1619,6 +1894,97 @@ func _on_preview_columns_changed(value: float) -> void:
 	save_config()
 	if preview_grid and not theme_parts.is_empty():
 		preview_grid.columns = preview_columns
+
+func _on_preview_item_width_changed(value: float) -> void:
+	preview_item_width = int(value)
+	save_config()
+	_on_apply_preview_pressed()
+
+func _on_preview_item_gui_input(event: InputEvent, inst: Control) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+		# Double click detected! Create in-place LineEdit
+		var current_text = ""
+		
+		if "text" in inst:
+			current_text = inst.text
+		elif "placeholder_text" in inst:
+			current_text = inst.placeholder_text
+		else:
+			# Check if there is a Label child we added
+			for child in inst.get_children():
+				if child is Label:
+					current_text = child.text
+					break
+					
+		# Create the LineEdit overlay
+		var le = LineEdit.new()
+		le.text = current_text
+		le.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		
+		# Set flat/borderless style overrides
+		var empty_sb = StyleBoxEmpty.new()
+		le.add_theme_stylebox_override("normal", empty_sb)
+		le.add_theme_stylebox_override("focus", empty_sb)
+		
+		# Inherit font and size from the control if possible
+		if inst.has_theme_font("font"):
+			le.add_theme_font_override("font", inst.get_theme_font("font"))
+		if inst.has_theme_font_size("font_size"):
+			le.add_theme_font_size_override("font_size", inst.get_theme_font_size("font_size"))
+		if inst.has_theme_color("font_color"):
+			le.add_theme_color_override("font_color", inst.get_theme_color("font_color"))
+			
+		inst.add_child(le)
+		le.size = inst.size
+		le.position = Vector2.ZERO
+		le.grab_focus()
+		le.select_all()
+		
+		var called = false
+		var on_finish = func(new_text: String, save: bool):
+			if called:
+				return
+			called = true
+			if is_instance_valid(le):
+				if save:
+					var c_type = inst.get_meta("ctrl_type", "")
+					var s_name = inst.get_meta("state", "")
+					if c_type != "" and s_name != "":
+						var t_key = c_type + "_" + s_name
+						var clean_text = new_text.to_lower().strip_edges()
+						if clean_text in ["default", "reset", "[default]", "[reset]"]:
+							if preview_texts.has(t_key):
+								preview_texts.erase(t_key)
+							
+							# Reset control text to default
+							var default_text = c_type
+							if s_name == "disabled":
+								default_text += " (Disabled)"
+							elif s_name == "pressed":
+								default_text += " (Pressed)"
+							elif s_name == "read_only":
+								default_text += " (Read Only)"
+							
+							new_text = default_text
+						else:
+							preview_texts[t_key] = new_text
+							
+						save_config()
+						
+					if "text" in inst:
+						inst.text = new_text
+					elif "placeholder_text" in inst:
+						inst.placeholder_text = new_text
+					else:
+						# Update the Label child
+						for child in inst.get_children():
+							if child is Label and child != le:
+								child.text = new_text
+								break
+				le.queue_free()
+				
+		le.text_submitted.connect(func(t): on_finish.call(t, true))
+		le.focus_exited.connect(func(): on_finish.call(le.text, true))
 
 func _on_erp_resource_changed(res: Resource) -> void:
 	if res and Engine.is_editor_hint():
@@ -1705,7 +2071,15 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 			
 	var new_stylebox: StyleBox = null
 	
-	if shadow_effect != null:
+	# Check if this is an icon, arrow, or toggle which must retain its texture shape
+	var is_icon_or_custom_shape = false
+	var name_lower = svg_key.to_lower()
+	for keyword in ["arrow", "knob", "toggle", "icon", "decrease", "increase", "slider", "subtract", "back", "left", "right"]:
+		if keyword in name_lower:
+			is_icon_or_custom_shape = true
+			break
+			
+	if shadow_effect != null and not is_icon_or_custom_shape:
 		# Build programmatically styled StyleBoxFlat
 		var flat_sb = StyleBoxFlat.new()
 		
@@ -1776,11 +2150,69 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		# Build StyleBoxTexture using the SVG path
 		var tex_sb = StyleBoxTexture.new()
 		var svg_path = image_folder.path_join(svg_key)
+		
+		# Load textures sizes to calculate expansion padding margins
+		var tex_w = 200.0
+		var tex_h = 60.0
+		var temp_tex = null
 		if ResourceLoader.exists(svg_path):
-			var tex = ResourceLoader.load(svg_path)
+			temp_tex = ResourceLoader.load(svg_path)
+			if temp_tex:
+				var size = temp_tex.get_size()
+				tex_w = size.x
+				tex_h = size.y
+				
+		var design_w = float(entry.get("width", tex_w))
+		var design_h = float(entry.get("height", tex_h))
+		var pad_x = max(0.0, (tex_w - design_w) / 2.0)
+		var pad_y = max(0.0, (tex_h - design_h) / 2.0)
+		
+		# Inject designed solid background color fills programmatically directly into the SVG
+		var fills = entry.get("fills", [])
+		if fills.size() > 0:
+			var first_fill = fills[0]
+			if first_fill is Dictionary and first_fill.get("type") == "SOLID":
+				var fill_col_dict = first_fill.get("color", {})
+				var fr = float(fill_col_dict.get("r", 0.0))
+				var fg = float(fill_col_dict.get("g", 0.0))
+				var fb = float(fill_col_dict.get("b", 0.0))
+				var fill_opacity = float(first_fill.get("opacity", 1.0))
+				var col = Color(fr, fg, fb)
+				var fill_color = "#" + col.to_html(false)
+				var rx = design_h / 2.0
+				var rect_svg = '<rect id="figma_bg_inject" x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" fill-opacity="%f"/>' % [pad_x, pad_y, design_w, design_h, rx, rx, fill_color, fill_opacity]
+				
+				if FileAccess.file_exists(svg_path):
+					var file = FileAccess.open(svg_path, FileAccess.READ)
+					if file:
+						var svg_text = file.get_as_text()
+						file.close()
+						
+						var svg_tag_end = svg_text.find(">", svg_text.find("<svg"))
+						if svg_tag_end != -1 and not "figma_bg_inject" in svg_text:
+							svg_text = svg_text.insert(svg_tag_end + 1, "\n" + rect_svg)
+							var write_file = FileAccess.open(svg_path, FileAccess.WRITE)
+							if write_file:
+								write_file.store_string(svg_text)
+								write_file.close()
+								print("Injected Figma solid background fill into SVG: ", svg_path)
+		
+		_clean_svg_filters(svg_path)
+		
+		var tex = null
+		if ResourceLoader.exists(svg_path):
+			tex = ResourceLoader.load(svg_path)
 			if tex:
 				tex_sb.texture = tex
 		
+		# Apply expand margins to draw the shadow padding glow outside the button boundaries
+		if pad_x > 0.0:
+			tex_sb.expand_margin_left = pad_x
+			tex_sb.expand_margin_right = pad_x
+		if pad_y > 0.0:
+			tex_sb.expand_margin_top = pad_y
+			tex_sb.expand_margin_bottom = pad_y
+			
 		# Set content margins to Godot default buttons margins (L=6, R=6, T=4, B=4)
 		tex_sb.content_margin_left = 6.0
 		tex_sb.content_margin_right = 6.0

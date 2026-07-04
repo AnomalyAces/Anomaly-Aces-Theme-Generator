@@ -2,6 +2,15 @@
 
 Given a collection of assets and a JSON file with metadata, this project creates a Godot Theme that is ready for import in the game engine.
 
+## Features
+
+- **Metadata-Based StyleBox Builder**: Auto-compiles SVG assets and Figma shadow/blur effects into native Godot `StyleBoxFlat` or `StyleBoxTexture` resources.
+- **Live Preview Panel**: Real-time rendering of compiled theme elements inside Godot. Features customizable columns and dynamic item width settings (including automatic 1:1 Figma design dimension matching).
+- **In-Place Text Editing**: Double-click on any preview button, line edit, or label to type custom strings directly on top of the elements, persisting your text choices automatically.
+- **DPI Layout & Text Clipping**: Integrates editor theme inheritance for high-DPI scaling and text clipping (`clip_text`) on constrained elements to prevent text-stretching.
+- **SVG Filter Stripping**: Strips unsupported Figma `<filter>` attributes on import to bypass Godot's ThorVG rendering limitations, preserving custom shapes (like circles and arrow cutouts).
+- **Automatic Expand Margins**: Matches Figma drop shadow boundaries to `StyleBoxTexture` expand margins, drawing glows outside the borders without shrinking or stretching the core shapes.
+
 ## Getting Started
 
 ### Prerequisites & Dependencies Installation

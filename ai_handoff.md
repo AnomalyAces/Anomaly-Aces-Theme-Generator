@@ -48,6 +48,32 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 * **Dynamic Override Font Scaling**: Implemented dynamic scaling of hardcoded font size overrides and tree heights in `AceThemeGenerator.gd` using `EditorInterface.get_editor_scale()`.
 * **Configured Overrides Expansion**: Enabled vertical size flags (`size_flags_vertical = 3`) on `PartsBuilderPanel`, its nested `VBox`/`PartsBuilderContent` containers, and `PartsTree` itself to stretch it to fill the remaining height of the left panel.
 
+### H. Override Form Preservation & Safe Duplicate Keys
+* Fixed a bug where creating a **New Override** overwrote active properties by automatically generating unique copy keys (e.g. `normal_copy`).
+* Preserved user form inputs (Property Type, Property Name, Override Name/ID) and the **Build from Metadata** checkbox when switching categories or adding overrides.
+
+### I. Dynamic Preview Width & Uniform Columns
+* Added an **Item Width** SpinBox. When `width > 0`, constraints are applied to all elements uniformly in the grid columns, preventing Godot from stretching columns unevenly.
+* Configured the grid's horizontal flag to `SIZE_SHRINK_CENTER` to keep the layout snug and clean.
+
+### J. In-Place Double-Click Text Editing
+* Left double-clicks on preview controls spawn a borderless overlay LineEdit that inherits the control's font family, color, and size.
+* The customized string is automatically saved in `config.json` mapping `ctrl_type + "_" + state` to values, and restored upon preview redrawing.
+* Supported typing empty strings `""` to preview textless panels, and special keywords like `default` or `reset` to clear configs.
+
+### K. 1:1 Figma Design Size Alignment
+* Loaded figma metadata dimension parameters. If Item Width is `0` (Auto), controls automatically size themselves to their 1:1 designed dimensions (e.g., 200x60, 60x60).
+* Enabled text clipping (`clip_text`) on constrained elements to prevent long text strings (e.g. `"BackButton (Button) (Disabled)"`) from stretching small icon buttons out of shape.
+* Traces resource stylebox paths back to their source SVG filenames to resolve metadata lookups even if custom override IDs or suffix-copies are present.
+
+### L. Automatic State Sizing Fallback
+* Standardized button dimensions across all states: if a state fails to trace a design size (such as the pressed flat StyleBox), it automatically adopts a fallback from another state of the same control type (e.g., matching the normal state's 200x60 scale).
+
+### M. Custom Shape Safety & SVG Filter Stripping
+* Prevented custom shapes (arrows, knobs, toggles, sliders) with drop shadows from being compiled as flat rectangles, forcing them to remain as `StyleBoxTexture` resources.
+* Automatically strips unsupported SVG `filter="url(#...)"` properties on import, bypassing Godot's ThorVG renderer bugs and restoring full rendering of hidden circle and arrow vector shapes.
+* Calculates Figma shadow border padding and applies it to the `StyleBoxTexture`'s `expand_margin` properties, drawing glows outside the button bounds while keeping the core button exactly at its designed 1:1 size.
+
 ---
 
 ## 3. Key Godot 4.6 Constraints & Gotchas
@@ -64,13 +90,14 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 ---
 
 ## 4. File Map & Locations
-* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
-* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
-* **Internal State config**: [config.json](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
-* **Plugin Configuration**: [plugin.cfg](file:///c:/Users/Jerek/Documents/Anomaly Aces/Anomaly Aces Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
+* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
+* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
+* **Internal State config**: [config.json](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
+* **Plugin Configuration**: [plugin.cfg](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
 
 ---
 
 ## 5. Next Steps for Next Session
+* Verify and compile all other custom SVG shapes (like slider knobs, toggles, and right arrows) using the new filter stripping and expand margin system.
 * Check with the user if they want to integrate automated parsing of Figma layout constraints or font properties from the JSON metadata file (`Metadata/metadata.json`).
 * Extend preview layouts with mock themes so that style changes can be tested inside complex layouts (e.g. nested lists, checkboxes, and sliders).
