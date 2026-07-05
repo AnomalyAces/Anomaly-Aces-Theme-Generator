@@ -4,6 +4,7 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO.tres",
 	"preview_columns": 6,
+	"preview_font_size": 22,
 	"preview_item_width": 0,
 	"preview_texts": {
 		"BackButton_disabled": "",
@@ -12,6 +13,9 @@
 		"Button_disabled": "Disabled",
 		"Button_normal": "Button",
 		"Button_pressed": "Pressed",
+		"DecreaseButton_disabled": "",
+		"DecreaseButton_normal": "",
+		"DecreaseButton_pressed": "",
 		"ForwardButton_disabled": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
@@ -64,9 +68,21 @@
 		},
 		"DecreaseButton": {
 			"styleboxes": {
+				"disabled": {
+					"id": "decrease_button_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_disabled.tres"
+				},
+				"hover": {
+					"id": "decrease_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_hover.tres"
+				},
 				"normal": {
 					"id": "decrease_button_normal",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_normal.tres"
+				},
+				"pressed": {
+					"id": "decrease_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_pressed.tres"
 				}
 			}
 		},
@@ -126,6 +142,34 @@
 				}
 			}
 		},
+		"LineEditError": {
+			"styleboxes": {
+				"normal": {
+					"id": "line_edit_error_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_error_normal.tres"
+				}
+			}
+		},
+		"LineEditErrorLabel": {
+			"colors": {
+				"font_color": {
+					"id": "line_edit_error_label",
+					"value": "#ff3b30ff"
+				}
+			},
+			"font_sizes": {
+				"font_size": {
+					"id": "line_edit_error_label",
+					"value": 26.0
+				}
+			},
+			"fonts": {
+				"font": {
+					"id": "line_edit_error_label",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Fonts/Inter-400-normal.tres"
+				}
+			}
+		},
 		"PanelContainer": {
 			"styleboxes": {
 				"panel": {
@@ -139,6 +183,8 @@
 		"BackButton": "Button",
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
-		"IncreaseButton": "Button"
+		"IncreaseButton": "Button",
+		"LineEditError": "LineEdit",
+		"LineEditErrorLabel": "Label"
 	}
 }

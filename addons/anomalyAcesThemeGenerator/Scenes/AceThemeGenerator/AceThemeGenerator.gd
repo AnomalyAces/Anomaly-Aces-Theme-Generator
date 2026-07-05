@@ -55,6 +55,8 @@ var _config_loaded: bool = false
 var preview_columns: int = 3
 var preview_item_width: int = 200
 var preview_item_width_spin: SpinBox
+var preview_font_size: int = 16
+var preview_font_size_spin: SpinBox
 var preview_texts: Dictionary = {}
 var _target_select_meta = null
 var _active_prop_key: String = ""
@@ -237,6 +239,24 @@ func setup_ui() -> void:
 		preview_item_width_spin.value_changed.connect(_on_preview_item_width_changed)
 		header_box.add_child(preview_item_width_spin)
 		
+		# Add separator
+		var sep2 = Control.new()
+		sep2.custom_minimum_size = Vector2(10, 0)
+		header_box.add_child(sep2)
+		
+		var font_size_label = Label.new()
+		font_size_label.text = "Font Size:"
+		header_box.add_child(font_size_label)
+		
+		preview_font_size_spin = SpinBox.new()
+		preview_font_size_spin.name = "PreviewFontSizeSpin"
+		preview_font_size_spin.min_value = 8
+		preview_font_size_spin.max_value = 72
+		preview_font_size_spin.value = preview_font_size
+		preview_font_size_spin.custom_minimum_size = Vector2(80, 0)
+		preview_font_size_spin.value_changed.connect(_on_preview_font_size_changed)
+		header_box.add_child(preview_font_size_spin)
+		
 	_apply_editor_scaling()
 
 func _apply_editor_scaling() -> void:
@@ -272,6 +292,8 @@ func _apply_editor_scaling() -> void:
 		parts_tree.custom_minimum_size = Vector2(0, int(150 * scale))
 	if preview_item_width_spin:
 		preview_item_width_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
+	if preview_font_size_spin:
+		preview_font_size_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 
 func _on_select_control_type_pressed() -> void:
 	print("AceThemeGenerator _on_select_control_type_pressed() called. is_editor_hint: ", Engine.is_editor_hint())
@@ -557,6 +579,7 @@ func save_config() -> void:
 		"theme_variations": theme_variations,
 		"preview_columns": preview_columns,
 		"preview_item_width": preview_item_width,
+		"preview_font_size": preview_font_size,
 		"preview_texts": preview_texts
 	}
 	var file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.WRITE)
@@ -603,6 +626,7 @@ func load_config() -> void:
 					theme_variations = data.get("theme_variations", {})
 					preview_columns = int(data.get("preview_columns", 3))
 					preview_item_width = int(data.get("preview_item_width", 200))
+					preview_font_size = int(data.get("preview_font_size", 16))
 					preview_texts = data.get("preview_texts", {})
 			else:
 				printerr("Failed to parse config.json: ", json.get_error_message(), " at line ", json.get_error_line())
@@ -637,6 +661,8 @@ func load_config() -> void:
 		preview_columns_spin.value = preview_columns
 	if preview_item_width_spin:
 		preview_item_width_spin.value = preview_item_width
+	if preview_font_size_spin:
+		preview_font_size_spin.value = preview_font_size
 
 	_config_loaded = true
 	_cleanup_unique_properties()
@@ -651,6 +677,7 @@ func load_config() -> void:
 		"theme_variations": theme_variations,
 		"preview_columns": preview_columns,
 		"preview_item_width": preview_item_width,
+		"preview_font_size": preview_font_size,
 		"preview_texts": preview_texts
 	}
 	var save_file = FileAccess.open(CONFIG_FILE_PATH, FileAccess.WRITE)
@@ -1101,6 +1128,7 @@ func _on_apply_preview_pressed() -> void:
 			placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			placeholder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			placeholder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			placeholder.add_theme_font_size_override("font_size", preview_font_size)
 			preview_grid.add_child(placeholder)
 		else:
 			# Use columns = 1 to stack our sections vertically inside the main GridContainer
@@ -1127,7 +1155,7 @@ func _on_apply_preview_pressed() -> void:
 				if theme_variations.has(ctrl_type) and theme_variations[ctrl_type] != "":
 					type_display += " (Variation of " + theme_variations[ctrl_type] + ")"
 				header_lbl.text = type_display
-				header_lbl.add_theme_font_size_override("font_size", 16)
+				header_lbl.add_theme_font_size_override("font_size", preview_font_size + 4)
 				header_lbl.add_theme_color_override("font_color", Color(0.26, 0.95, 1.0, 1.0)) # Neon Cyan
 				
 				var separator = HSeparator.new()
@@ -1297,7 +1325,7 @@ func _on_apply_preview_pressed() -> void:
 							design_width = common_width
 							design_height = common_height
 							
-						setup_preview_node(inst, item_text)
+						setup_preview_node(inst, item_text, temp_theme)
 						
 						# If stylebox wasn't directly loaded, look it up in the compiled theme
 						if active_stylebox == null:
@@ -1355,17 +1383,20 @@ func _on_apply_preview_pressed() -> void:
 						if preview_item_width > 0:
 							inst.custom_minimum_size = Vector2(preview_item_width, design_height if design_height > 0 else 40.0)
 							inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+							inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 							if "clip_text" in inst:
 								inst.clip_text = true
 						else:
 							if design_width > 0 and design_height > 0:
 								inst.custom_minimum_size = Vector2(design_width, design_height)
 								inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+								inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 								if "clip_text" in inst:
 									inst.clip_text = true
 							else:
 								inst.custom_minimum_size = Vector2(0, 40.0)
 								inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+								inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 						
 						# Store metadata for editing and persistence
 						inst.set_meta("ctrl_type", ctrl_type)
@@ -1389,17 +1420,46 @@ func instantiate_class_by_name(p_class: String) -> Control:
 					return inst
 	return null
 
-func setup_preview_node(inst: Control, display_name: String) -> void:
+func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = null) -> void:
 	if inst is Panel or inst is PanelContainer or inst is ColorRect or inst is TextureRect or inst is Container or inst is Tree:
 		inst.custom_minimum_size = Vector2(0, 40)
 		
+	var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
+	
+	var has_theme_size = false
+	if theme_ref != null:
+		if theme_ref.has_font_size("font_size", theme_type):
+			has_theme_size = true
+		else:
+			var base_type = theme_variations.get(theme_type, "")
+			if base_type != "" and theme_ref.has_font_size("font_size", base_type):
+				has_theme_size = true
+			elif theme_ref.has_font_size("font_size", inst.get_class()):
+				has_theme_size = true
+
 	if inst is RichTextLabel:
 		inst.text = "[color=magenta]Sample[/color] " + display_name
 		inst.fit_content = true
+		var has_rt_size = false
+		if theme_ref != null:
+			if theme_ref.has_font_size("normal_font_size", theme_type):
+				has_rt_size = true
+			else:
+				var base_type = theme_variations.get(theme_type, "")
+				if base_type != "" and theme_ref.has_font_size("normal_font_size", base_type):
+					has_rt_size = true
+				elif theme_ref.has_font_size("normal_font_size", inst.get_class()):
+					has_rt_size = true
+		if not has_rt_size:
+			inst.add_theme_font_size_override("normal_font_size", preview_font_size)
 	elif "placeholder_text" in inst:
 		inst.placeholder_text = display_name
+		if not has_theme_size:
+			inst.add_theme_font_size_override("font_size", preview_font_size)
 	elif "text" in inst:
 		inst.text = display_name
+		if not has_theme_size:
+			inst.add_theme_font_size_override("font_size", preview_font_size)
 	elif not (inst is Tree):
 		var lbl = Label.new()
 		lbl.text = display_name
@@ -1407,6 +1467,8 @@ func setup_preview_node(inst: Control, display_name: String) -> void:
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		if not has_theme_size:
+			lbl.add_theme_font_size_override("font_size", preview_font_size)
 		inst.add_child(lbl)
 		
 	if inst is Tree:
@@ -2001,6 +2063,11 @@ func _on_preview_columns_changed(value: float) -> void:
 
 func _on_preview_item_width_changed(value: float) -> void:
 	preview_item_width = int(value)
+	save_config()
+	_on_apply_preview_pressed()
+
+func _on_preview_font_size_changed(value: float) -> void:
+	preview_font_size = int(value)
 	save_config()
 	_on_apply_preview_pressed()
 
