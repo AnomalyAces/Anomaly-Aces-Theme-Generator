@@ -15,6 +15,9 @@
 		"ForwardButton_disabled": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
+		"IncreaseButton_disabled": "",
+		"IncreaseButton_normal": "",
+		"IncreaseButton_pressed": "",
 		"LineEdit_normal": "",
 		"LineEdit_read_only": ""
 	},
@@ -59,6 +62,14 @@
 				}
 			}
 		},
+		"DecreaseButton": {
+			"styleboxes": {
+				"normal": {
+					"id": "decrease_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_normal.tres"
+				}
+			}
+		},
 		"ForwardButton": {
 			"styleboxes": {
 				"disabled": {
@@ -76,6 +87,26 @@
 				"pressed": {
 					"id": "forward_button_pressed",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_pressed.tres"
+				}
+			}
+		},
+		"IncreaseButton": {
+			"styleboxes": {
+				"disabled": {
+					"id": "increase_button_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_disabled.tres"
+				},
+				"hover": {
+					"id": "increase_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_hover.tres"
+				},
+				"normal": {
+					"id": "increase_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_normal.tres"
+				},
+				"pressed": {
+					"id": "increase_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_pressed.tres"
 				}
 			}
 		},
@@ -106,6 +137,8 @@
 	},
 	"theme_variations": {
 		"BackButton": "Button",
-		"ForwardButton": "Button"
+		"DecreaseButton": "Button",
+		"ForwardButton": "Button",
+		"IncreaseButton": "Button"
 	}
 }
