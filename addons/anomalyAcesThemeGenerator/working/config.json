@@ -1,7 +1,7 @@
 {
-	"fonts_folder": "res://addons/anomalyAcesThemeGenerator/working/Fonts",
-	"image_folder": "res://addons/anomalyAcesThemeGenerator/working/Images",
-	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
+	"fonts_folder": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Fonts",
+	"image_folder": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images",
+	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
 	"preview_font_size": 22,
@@ -33,19 +33,19 @@
 			"styleboxes": {
 				"disabled": {
 					"id": "back_button_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/back_button_disabled.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/back_button_disabled.tres"
 				},
 				"hover": {
 					"id": "back_button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/back_button_hover.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/back_button_hover.tres"
 				},
 				"normal": {
 					"id": "back_button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/back_button_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/back_button_normal.tres"
 				},
 				"pressed": {
 					"id": "back_button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/back_button_pressed.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/back_button_pressed.tres"
 				}
 			}
 		},
@@ -53,19 +53,19 @@
 			"styleboxes": {
 				"disabled": {
 					"id": "button_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/disabled_button.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/disabled_button.tres"
 				},
 				"hover": {
 					"id": "button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/hover_button.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/hover_button.tres"
 				},
 				"normal": {
 					"id": "button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/normal_button.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/normal_button.tres"
 				},
 				"pressed": {
 					"id": "button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/pressed_button.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/pressed_button.tres"
 				}
 			}
 		},
@@ -73,15 +73,15 @@
 			"styleboxes": {
 				"hover": {
 					"id": "color_selection_button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_hover.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/color_selection_hover.tres"
 				},
 				"normal": {
 					"id": "color_selection_button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/color_selection_normal.tres"
 				},
 				"pressed": {
 					"id": "color_selection_button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_pressed.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/color_selection_pressed.tres"
 				}
 			}
 		},
@@ -89,7 +89,7 @@
 			"styleboxes": {
 				"panel": {
 					"id": "color_selection_panel",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_panel.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/color_selection_panel.tres"
 				}
 			}
 		},
@@ -97,19 +97,19 @@
 			"styleboxes": {
 				"disabled": {
 					"id": "decrease_button_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_disabled.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/decrease_button_disabled.tres"
 				},
 				"hover": {
 					"id": "decrease_button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_hover.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/decrease_button_hover.tres"
 				},
 				"normal": {
 					"id": "decrease_button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/decrease_button_normal.tres"
 				},
 				"pressed": {
 					"id": "decrease_button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/decrease_button_pressed.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/decrease_button_pressed.tres"
 				}
 			}
 		},
@@ -117,19 +117,19 @@
 			"styleboxes": {
 				"disabled": {
 					"id": "forward_button_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_disabled.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_disabled.tres"
 				},
 				"hover": {
 					"id": "forward_button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_hover.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_hover.tres"
 				},
 				"normal": {
 					"id": "forward_button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_normal.tres"
 				},
 				"pressed": {
 					"id": "forward_button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_pressed.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_pressed.tres"
 				}
 			}
 		},
@@ -137,19 +137,19 @@
 			"styleboxes": {
 				"disabled": {
 					"id": "increase_button_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_disabled.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/increase_button_disabled.tres"
 				},
 				"hover": {
 					"id": "increase_button_hover",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_hover.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/increase_button_hover.tres"
 				},
 				"normal": {
 					"id": "increase_button_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/increase_button_normal.tres"
 				},
 				"pressed": {
 					"id": "increase_button_pressed",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/increase_button_pressed.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/increase_button_pressed.tres"
 				}
 			}
 		},
@@ -157,15 +157,15 @@
 			"styleboxes": {
 				"focus": {
 					"id": "line_edit_focus",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_focus.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/line_edit_focus.tres"
 				},
 				"normal": {
 					"id": "line_edit_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/line_edit_normal.tres"
 				},
 				"read_only": {
 					"id": "line_edit_disabled",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_disabled.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/line_edit_disabled.tres"
 				}
 			}
 		},
@@ -173,7 +173,7 @@
 			"styleboxes": {
 				"normal": {
 					"id": "line_edit_error_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_error_normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/line_edit_error_normal.tres"
 				}
 			}
 		},
@@ -193,7 +193,7 @@
 			"fonts": {
 				"font": {
 					"id": "line_edit_error_label",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Fonts/Inter-400-normal.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Fonts/Inter-400-normal.tres"
 				}
 			}
 		},
@@ -201,7 +201,7 @@
 			"styleboxes": {
 				"panel": {
 					"id": "test_panel",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/test_panel_stylebox.tres"
 				}
 			}
 		}

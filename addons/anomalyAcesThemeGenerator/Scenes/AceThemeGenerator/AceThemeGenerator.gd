@@ -191,6 +191,14 @@ func setup_ui() -> void:
 	# Wire Columns SpinBox
 	preview_columns_spin.value_changed.connect(_on_preview_columns_changed)
 
+	# Dynamic creation of Import Config button
+	if settings_content:
+		var import_btn = Button.new()
+		import_btn.name = "ImportConfigBtn"
+		import_btn.text = "Import Theme Configuration..."
+		import_btn.pressed.connect(_on_import_config_pressed)
+		settings_content.add_child(import_btn)
+
 	# Connect actions
 	%AddPartBtn.pressed.connect(_on_add_part_pressed)
 	%NewOverrideBtn.pressed.connect(_on_new_override_pressed)
@@ -1514,6 +1522,30 @@ func export_theme_package(target_dir: String) -> void:
 	var files_to_copy: Dictionary = {}
 	var path_replacements: Dictionary = {}
 	
+	# Copy local configuration file as part of the package to make it round-trippable
+	files_to_copy[CONFIG_FILE_PATH] = target_dir.path_join("config.json")
+	path_replacements[CONFIG_FILE_PATH] = target_dir.path_join("config.json")
+	
+	# Add directory paths to path replacements so the exported config.json updates settings correctly
+	path_replacements[image_folder] = target_img_dir
+	path_replacements[fonts_folder] = target_font_dir
+	
+	# Copy metadata file if configured
+	if metadata_file != "":
+		var meta_filename = metadata_file.get_file()
+		var source_meta_path = ""
+		if FileAccess.file_exists("res://addons/anomalyAcesThemeGenerator/working/Metadata".path_join(meta_filename)):
+			source_meta_path = "res://addons/anomalyAcesThemeGenerator/working/Metadata".path_join(meta_filename)
+		elif FileAccess.file_exists(metadata_file):
+			source_meta_path = metadata_file
+			
+		if source_meta_path != "":
+			var target_meta_dir = target_dir.path_join("Metadata")
+			_ensure_dir_exists(target_meta_dir)
+			var new_meta_path = target_meta_dir.path_join(meta_filename)
+			files_to_copy[source_meta_path] = new_meta_path
+			path_replacements[metadata_file] = new_meta_path
+	
 	for ctrl_type in theme_parts.keys():
 		var section = theme_parts[ctrl_type]
 		
@@ -1524,13 +1556,22 @@ func export_theme_package(target_dir: String) -> void:
 				if sb_val is String and sb_val.begins_with("res://"):
 					var old_sb_path = sb_val
 					var sb_filename = old_sb_path.get_file()
-					var new_sb_path = target_res_dir.path_join(sb_filename)
-					files_to_copy[old_sb_path] = new_sb_path
-					path_replacements[old_sb_path] = new_sb_path
+					
+					var source_sb_path = ""
+					if FileAccess.file_exists("res://addons/anomalyAcesThemeGenerator/working/ResourceFiles".path_join(sb_filename)):
+						source_sb_path = "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles".path_join(sb_filename)
+					elif FileAccess.file_exists(old_sb_path):
+						source_sb_path = old_sb_path
+						
+					if source_sb_path != "":
+						var new_sb_path = target_res_dir.path_join(sb_filename)
+						files_to_copy[source_sb_path] = new_sb_path
+						path_replacements[old_sb_path] = new_sb_path
 					
 					# Open StyleBox file to scan for referenced textures (images)
-					if FileAccess.file_exists(old_sb_path):
-						var file = FileAccess.open(old_sb_path, FileAccess.READ)
+					var check_sb_path = source_sb_path if source_sb_path != "" else old_sb_path
+					if FileAccess.file_exists(check_sb_path):
+						var file = FileAccess.open(check_sb_path, FileAccess.READ)
 						if file:
 							var content = file.get_as_text()
 							file.close()
@@ -1540,10 +1581,20 @@ func export_theme_package(target_dir: String) -> void:
 							var results = regex.search_all(content)
 							for result in results:
 								var old_img_path = result.get_string(1)
-								if old_img_path.begins_with(old_img_dir) or old_img_path.contains("/working/Images/"):
-									var img_filename = old_img_path.get_file()
+								var img_filename = old_img_path.get_file()
+								
+								# Resolve the best source path for this image
+								var source_img_path = ""
+								if FileAccess.file_exists(image_folder.path_join(img_filename)):
+									source_img_path = image_folder.path_join(img_filename)
+								elif FileAccess.file_exists("res://addons/anomalyAcesThemeGenerator/working/Images".path_join(img_filename)):
+									source_img_path = "res://addons/anomalyAcesThemeGenerator/working/Images".path_join(img_filename)
+								elif FileAccess.file_exists(old_img_path):
+									source_img_path = old_img_path
+									
+								if source_img_path != "":
 									var new_img_path = target_img_dir.path_join(img_filename)
-									files_to_copy[old_img_path] = new_img_path
+									files_to_copy[source_img_path] = new_img_path
 									path_replacements[old_img_path] = new_img_path
 									
 		# 2. Scan fonts
@@ -1553,9 +1604,19 @@ func export_theme_package(target_dir: String) -> void:
 				if font_val is String and font_val.begins_with("res://"):
 					var old_font_path = font_val
 					var font_filename = old_font_path.get_file()
-					var new_font_path = target_font_dir.path_join(font_filename)
-					files_to_copy[old_font_path] = new_font_path
-					path_replacements[old_font_path] = new_font_path
+					
+					var source_font_path = ""
+					if FileAccess.file_exists(fonts_folder.path_join(font_filename)):
+						source_font_path = fonts_folder.path_join(font_filename)
+					elif FileAccess.file_exists("res://addons/anomalyAcesThemeGenerator/working/Fonts".path_join(font_filename)):
+						source_font_path = "res://addons/anomalyAcesThemeGenerator/working/Fonts".path_join(font_filename)
+					elif FileAccess.file_exists(old_font_path):
+						source_font_path = old_font_path
+						
+					if source_font_path != "":
+						var new_font_path = target_font_dir.path_join(font_filename)
+						files_to_copy[source_font_path] = new_font_path
+						path_replacements[old_font_path] = new_font_path
 					
 		# 3. Scan icons
 		if section.has("icons"):
@@ -1564,14 +1625,27 @@ func export_theme_package(target_dir: String) -> void:
 				if icon_val is String and icon_val.begins_with("res://"):
 					var old_icon_path = icon_val
 					var icon_filename = old_icon_path.get_file()
-					var new_icon_path = target_img_dir.path_join(icon_filename)
-					files_to_copy[old_icon_path] = new_icon_path
-					path_replacements[old_icon_path] = new_icon_path
+					
+					var source_icon_path = ""
+					if FileAccess.file_exists(image_folder.path_join(icon_filename)):
+						source_icon_path = image_folder.path_join(icon_filename)
+					elif FileAccess.file_exists("res://addons/anomalyAcesThemeGenerator/working/Images".path_join(icon_filename)):
+						source_icon_path = "res://addons/anomalyAcesThemeGenerator/working/Images".path_join(icon_filename)
+					elif FileAccess.file_exists(old_icon_path):
+						source_icon_path = old_icon_path
+						
+					if source_icon_path != "":
+						var new_icon_path = target_img_dir.path_join(icon_filename)
+						files_to_copy[source_icon_path] = new_icon_path
+						path_replacements[old_icon_path] = new_icon_path
 
 	# Copy files to target package
 	var copy_errors: Array[String] = []
 	for old_path in files_to_copy.keys():
 		var new_path = files_to_copy[old_path]
+		if old_path == new_path:
+			continue
+			
 		if FileAccess.file_exists(old_path):
 			var err = DirAccess.copy_absolute(old_path, new_path)
 			if err != OK:
@@ -1603,6 +1677,10 @@ func export_theme_package(target_dir: String) -> void:
 			files_to_patch.append(import_new)
 			
 	for new_file_path in files_to_patch:
+		var ext = new_file_path.get_extension().to_lower()
+		if not ext in ["tres", "theme", "import", "json"]:
+			continue
+			
 		if FileAccess.file_exists(new_file_path):
 			var file = FileAccess.open(new_file_path, FileAccess.READ)
 			if file:
@@ -3019,3 +3097,91 @@ func _ensure_metadata_controls() -> void:
 		metadata_build_check.toggled.connect(_on_metadata_build_check_toggled)
 		# Wire build button
 		metadata_build_btn.pressed.connect(_on_build_stylebox_pressed.bind(metadata_dropdown))
+
+func _on_import_config_pressed() -> void:
+	if Engine.is_editor_hint():
+		var dialog = EditorFileDialog.new()
+		dialog.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+		dialog.access = EditorFileDialog.ACCESS_RESOURCES
+		dialog.title = "Select Theme Configuration (config.json)"
+		dialog.add_filter("*.json", "JSON Config File")
+		dialog.file_selected.connect(_on_import_config_selected.bind(dialog))
+		dialog.canceled.connect(dialog.queue_free)
+		add_child(dialog)
+		dialog.popup_centered_ratio(0.4)
+	else:
+		var dialog = FileDialog.new()
+		dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		dialog.access = FileDialog.ACCESS_RESOURCES
+		dialog.title = "Select Theme Configuration (config.json)"
+		dialog.add_filter("*.json", "JSON Config File")
+		dialog.file_selected.connect(_on_import_config_selected.bind(dialog))
+		dialog.canceled.connect(dialog.queue_free)
+		add_child(dialog)
+		dialog.popup_centered_ratio(0.4)
+
+func _on_import_config_selected(file_path: String, dialog: Node) -> void:
+	dialog.queue_free()
+	
+	if not FileAccess.file_exists(file_path):
+		printerr("Configuration file does not exist: ", file_path)
+		return
+		
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		printerr("Failed to open configuration file for reading: ", file_path)
+		return
+		
+	var json_string = file.get_as_text()
+	file.close()
+	
+	var json = JSON.new()
+	var error = json.parse(json_string)
+	if error != OK:
+		printerr("Failed to parse imported configuration: ", json.get_error_message())
+		return
+		
+	var data = json.get_data()
+	if not data is Dictionary:
+		printerr("Imported configuration data is invalid (must be a JSON Dictionary)")
+		return
+		
+	print("Importing configuration from: ", file_path)
+	
+	# Load variables
+	image_folder = data.get("image_folder", "")
+	fonts_folder = data.get("fonts_folder", "")
+	metadata_file = data.get("metadata_file", "")
+	output_file = data.get("output_file", "")
+	theme_parts = data.get("theme_parts", {})
+	theme_variations = data.get("theme_variations", {})
+	preview_columns = int(data.get("preview_columns", 3))
+	preview_item_width = int(data.get("preview_item_width", 200))
+	preview_font_size = int(data.get("preview_font_size", 16))
+	preview_texts = data.get("preview_texts", {})
+	
+	# Update UI inputs
+	if images_edit:
+		images_edit.text = image_folder
+	if fonts_edit:
+		fonts_edit.text = fonts_folder
+	if metadata_edit:
+		metadata_edit.text = metadata_file
+	if output_edit:
+		output_edit.text = output_file
+		
+	if preview_columns_spin:
+		preview_columns_spin.value = preview_columns
+	if preview_item_width_spin:
+		preview_item_width_spin.value = preview_item_width
+	if preview_font_size_spin:
+		preview_font_size_spin.value = preview_font_size
+		
+	# Save this configuration to our active local config file so it persists
+	save_config()
+	
+	# Refresh Parts Builder Tree and Preview Grid
+	refresh_parts_tree()
+	_on_apply_preview_pressed()
+	
+	print("Imported theme configuration successfully.")
