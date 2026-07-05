@@ -2,7 +2,7 @@
 	"fonts_folder": "res://addons/anomalyAcesThemeGenerator/working/Fonts",
 	"image_folder": "res://addons/anomalyAcesThemeGenerator/working/Images",
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
-	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO.tres",
+	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
 	"preview_font_size": 22,
 	"preview_item_width": 0,

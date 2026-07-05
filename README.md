@@ -6,10 +6,13 @@ Given a collection of assets and a JSON file with metadata, this project creates
 
 - **Metadata-Based StyleBox Builder**: Auto-compiles SVG assets and Figma shadow/blur effects into native Godot `StyleBoxFlat` or `StyleBoxTexture` resources.
 - **Live Preview Panel**: Real-time rendering of compiled theme elements inside Godot. Features customizable columns and dynamic item width settings (including automatic 1:1 Figma design dimension matching).
+- **Configurable Preview Font Sizes**: Includes a `Font Size` SpinBox in the preview header to scale preview text and group title headers dynamically.
 - **In-Place Text Editing**: Double-click on any preview button, line edit, or label to type custom strings directly on top of the elements, persisting your text choices automatically.
 - **DPI Layout & Text Clipping**: Integrates editor theme inheritance for high-DPI scaling and text clipping (`clip_text`) on constrained elements to prevent text-stretching.
 - **SVG Filter Stripping**: Strips unsupported Figma `<filter>` attributes on import to bypass Godot's ThorVG rendering limitations, preserving custom shapes (like circles and arrow cutouts).
 - **Automatic Expand Margins**: Matches Figma drop shadow boundaries to `StyleBoxTexture` expand margins, drawing glows outside the borders without shrinking or stretching the core shapes.
+- **Self-Contained Theme Packaging**: Generating/compiling a theme automatically copies and packages the theme file along with all referenced styleboxes, SVG textures, `.import` configs, and fonts to subfolders relative to the output path, rewriting all `res://` paths in-place.
+- **Standalone Preview Scene Export**: Automatically exports a standalone `theme_preview.tscn` styled with your packaged theme, ready to be opened in Godot or loaded in the default Theme Editor preview pane.
 
 ## Getting Started
 

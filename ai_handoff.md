@@ -85,6 +85,10 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 * **Stale Background Rect Cleanups**: Implemented dynamic background-rect stripping in the texture compiler to clean previous `figma_bg_inject` rect tags from target SVG files. If the design has no solid fill metadata, the old background rect is completely stripped to restore the component's transparency.
 * **Immediate SVG Re-Importing**: Triggered `EditorInterface.get_resource_filesystem().reimport_files()` after any compilation modification (injecting background, cleaning filters, or stripping rects) so Godot immediately flushes texture cache and reloads files in-editor.
 * **Grouped Section Layouts**: Structured `%PreviewGrid`'s columns count to `1` (VBox mode) and grouped each control variation/type into individual sub-grid sections styled with custom colored headers and separation padding. This aligns cells cleanly and prevents wider components from stretching adjacent controls.
+* **Configurable Preview Font Sizes**: Re-added a `Font Size` SpinBox next to the column inputs, scaling both the preview nodes and their section title headers dynamically (with theme font size bypass if explicitly configured in compiled styles).
+* **Locked Vertical Layout Spacing**: Set `size_flags_vertical = Control.SIZE_SHRINK_CENTER` on preview nodes to halt Godot's GridContainer vertical stretching, making sure outline buttons (like decrease buttons) remain circular.
+* **Self-Contained Theme Packaging**: Generating the theme automatically packages the theme file along with all referenced styleboxes, SVG textures, `.import` configuration files, and custom fonts into relative subfolders inside the output directory. All internal `res://` paths inside the `.tres` files are rewritten in-place.
+* **Standalone Preview Scene Export**: Automatically exports a self-contained `theme_preview.tscn` styled with your packaged theme, ready to be opened in Godot or loaded in the default Theme Editor preview pane.
 
 ---
 
@@ -110,6 +114,5 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 ---
 
 ## 5. Next Steps for Next Session
-* Verify and compile all other custom SVG shapes (like slider knobs, toggles, and right arrows) using the new filter stripping and expand margin system.
-* Check with the user if they want to integrate automated parsing of Figma layout constraints or font properties from the JSON metadata file (`Metadata/metadata.json`).
-* Extend preview layouts with mock themes so that style changes can be tested inside complex layouts (e.g. nested lists, checkboxes, and sliders).
+* Extend preview layouts inside the generated `theme_preview.tscn` to include nested sub-scenes showing complete UI layouts (e.g. settings panels or character select menus).
+* Parse layout margins and content padding parameters from Figma metadata to configure stylebox margins automatically.
