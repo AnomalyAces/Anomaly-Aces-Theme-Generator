@@ -13,6 +13,9 @@
 		"Button_disabled": "Disabled",
 		"Button_normal": "Button",
 		"Button_pressed": "Pressed",
+		"ColorSelectionButton_normal": "",
+		"ColorSelectionButton_pressed": "",
+		"ColorSelectionPanel_normal": "",
 		"DecreaseButton_disabled": "",
 		"DecreaseButton_normal": "",
 		"DecreaseButton_pressed": "",
@@ -63,6 +66,30 @@
 				"pressed": {
 					"id": "button_pressed",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/pressed_button.tres"
+				}
+			}
+		},
+		"ColorSelectionButton": {
+			"styleboxes": {
+				"hover": {
+					"id": "color_selection_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_hover.tres"
+				},
+				"normal": {
+					"id": "color_selection_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_normal.tres"
+				},
+				"pressed": {
+					"id": "color_selection_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_pressed.tres"
+				}
+			}
+		},
+		"ColorSelectionPanel": {
+			"styleboxes": {
+				"panel": {
+					"id": "color_selection_panel",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/color_selection_panel.tres"
 				}
 			}
 		},
@@ -181,6 +208,8 @@
 	},
 	"theme_variations": {
 		"BackButton": "Button",
+		"ColorSelectionButton": "Button",
+		"ColorSelectionPanel": "Panel",
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
 		"IncreaseButton": "Button",
