@@ -11,7 +11,12 @@
 		"BackButton_pressed": "",
 		"Button_disabled": "Disabled",
 		"Button_normal": "Button",
-		"Button_pressed": "Pressed"
+		"Button_pressed": "Pressed",
+		"ForwardButton_disabled": "",
+		"ForwardButton_normal": "",
+		"ForwardButton_pressed": "",
+		"LineEdit_normal": "",
+		"LineEdit_read_only": ""
 	},
 	"theme_parts": {
 		"BackButton": {
@@ -54,6 +59,42 @@
 				}
 			}
 		},
+		"ForwardButton": {
+			"styleboxes": {
+				"disabled": {
+					"id": "forward_button_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_disabled.tres"
+				},
+				"hover": {
+					"id": "forward_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_hover.tres"
+				},
+				"normal": {
+					"id": "forward_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_normal.tres"
+				},
+				"pressed": {
+					"id": "forward_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/forward_button_pressed.tres"
+				}
+			}
+		},
+		"LineEdit": {
+			"styleboxes": {
+				"focus": {
+					"id": "line_edit_focus",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_focus.tres"
+				},
+				"normal": {
+					"id": "line_edit_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_normal.tres"
+				},
+				"read_only": {
+					"id": "line_edit_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/line_edit_disabled.tres"
+				}
+			}
+		},
 		"PanelContainer": {
 			"styleboxes": {
 				"panel": {
@@ -64,6 +105,7 @@
 		}
 	},
 	"theme_variations": {
-		"BackButton": "Button"
+		"BackButton": "Button",
+		"ForwardButton": "Button"
 	}
 }

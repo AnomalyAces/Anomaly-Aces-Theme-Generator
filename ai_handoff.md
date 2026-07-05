@@ -74,6 +74,18 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 * Automatically strips unsupported SVG `filter="url(#...)"` properties on import, bypassing Godot's ThorVG renderer bugs and restoring full rendering of hidden circle and arrow vector shapes.
 * Calculates Figma shadow border padding and applies it to the `StyleBoxTexture`'s `expand_margin` properties, drawing glows outside the button bounds while keeping the core button exactly at its designed 1:1 size.
 
+### N. Preview Node Visual Freeze Overrides
+* Applied local theme overrides to preview controls, mapping the resolved state asset (and font colors) to all variant slots (`normal`, `hover`, `pressed`, `disabled`, `focus`, and `hover_pressed`).
+* This freezes their visual appearances, keeping the elements completely interactive for double-click text editing while preventing Godot from dynamically shifting styleboxes or font colors upon mouse hover or focus.
+* **Normal State Exemption**: Excluded elements representing the `"normal"` state from this freeze, allowing them to remain fully interactive and show transitions to hover and pressed states when hovered/clicked in the preview.
+* **Focus Preview State**: Added support to recognized and display `"focus"` overrides as their own dedicated preview nodes in the grid columns.
+* **childFills Fallback Support**: Programmed the stylebox compiler to read child vector node fills (`childFills`) as a fallback if frame-level fills (`fills`) are empty, preventing background color loss for components styled with nested shapes (like text input fields).
+* **SVG Corner Radius Parsing**: Configured the `StyleBoxFlat` builder to search the raw SVG file text for a `<rect>` node's `rx` attribute, matching the flat stylebox corner radius exactly to the original Figma design radius (e.g. `12px` for input boxes) instead of defaulting to a pill shape.
+* **Text Layer Fills Exclusion**: Filtered out vector nodes named `"Text"` (case-insensitive) inside the `childFills` loop to prevent text label colors from overriding the component's true background fill.
+* **Stale Background Rect Cleanups**: Implemented dynamic background-rect stripping in the texture compiler to clean previous `figma_bg_inject` rect tags from target SVG files. If the design has no solid fill metadata, the old background rect is completely stripped to restore the component's transparency.
+* **Immediate SVG Re-Importing**: Triggered `EditorInterface.get_resource_filesystem().reimport_files()` after any compilation modification (injecting background, cleaning filters, or stripping rects) so Godot immediately flushes texture cache and reloads files in-editor.
+* **Grouped Section Layouts**: Structured `%PreviewGrid`'s columns count to `1` (VBox mode) and grouped each control variation/type into individual sub-grid sections styled with custom colored headers and separation padding. This aligns cells cleanly and prevents wider components from stretching adjacent controls.
+
 ---
 
 ## 3. Key Godot 4.6 Constraints & Gotchas

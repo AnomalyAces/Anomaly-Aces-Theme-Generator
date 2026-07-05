@@ -1057,6 +1057,9 @@ func _get_configured_states(ctrl_type: String) -> Array[String]:
 			elif "read_only" in prop_lower:
 				if not states.has("read_only"):
 					states.append("read_only")
+			elif "focus" in prop_lower:
+				if not states.has("focus"):
+					states.append("focus")
 			else:
 				has_normal_configs = true
 				
@@ -1100,15 +1103,58 @@ func _on_apply_preview_pressed() -> void:
 			placeholder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			preview_grid.add_child(placeholder)
 		else:
-			if preview_item_width > 0:
-				preview_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			else:
-				preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			preview_grid.columns = preview_columns
+			# Use columns = 1 to stack our sections vertically inside the main GridContainer
+			preview_grid.columns = 1
+			preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			
 			# Instantiate and add nodes that are defined in theme_parts
 			for ctrl_type in theme_parts.keys():
 				if ctrl_type == "PanelContainer":
 					continue
+					
+				# Create section container
+				var section_box = VBoxContainer.new()
+				section_box.name = ctrl_type + "_Section"
+				section_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				section_box.add_theme_constant_override("separation", 10)
+				
+				# Create section header
+				var header_box = VBoxContainer.new()
+				header_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				
+				var header_lbl = Label.new()
+				var type_display = ctrl_type
+				if theme_variations.has(ctrl_type) and theme_variations[ctrl_type] != "":
+					type_display += " (Variation of " + theme_variations[ctrl_type] + ")"
+				header_lbl.text = type_display
+				header_lbl.add_theme_font_size_override("font_size", 16)
+				header_lbl.add_theme_color_override("font_color", Color(0.26, 0.95, 1.0, 1.0)) # Neon Cyan
+				
+				var separator = HSeparator.new()
+				separator.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				
+				header_box.add_child(header_lbl)
+				header_box.add_child(separator)
+				section_box.add_child(header_box)
+				
+				# Create the sub-grid for states
+				var sub_grid = GridContainer.new()
+				sub_grid.columns = preview_columns
+				sub_grid.add_theme_constant_override("h_separation", 15)
+				sub_grid.add_theme_constant_override("v_separation", 15)
+				
+				if preview_item_width > 0:
+					sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				else:
+					sub_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					
+				section_box.add_child(sub_grid)
+				preview_grid.add_child(section_box)
+				
+				# Add padding spacing margin at the bottom of the section
+				var spacer = Control.new()
+				spacer.custom_minimum_size = Vector2(0, 15)
+				preview_grid.add_child(spacer)
 				var states = _get_configured_states(ctrl_type)
 				
 				# Find a common design size from any state of this control type to use as fallback
@@ -1174,6 +1220,7 @@ func _on_apply_preview_pressed() -> void:
 						inst = instantiate_class_by_name(ctrl_type)
 						
 					if inst:
+						var active_stylebox: StyleBox = null
 						# Apply state to the instantiated node
 						if state == "disabled" and "disabled" in inst:
 							inst.disabled = true
@@ -1189,6 +1236,8 @@ func _on_apply_preview_pressed() -> void:
 							elif "read_only" in inst:
 								inst.read_only = true
 							display_name += " (Read Only)"
+						elif state == "focus":
+							display_name += " (Focus)"
 							
 						var text_key = ctrl_type + "_" + state
 						var item_text = display_name
@@ -1211,8 +1260,10 @@ func _on_apply_preview_pressed() -> void:
 								var val_path = _get_part_value(record)
 								if val_path is String and val_path != "" and ResourceLoader.exists(val_path):
 									var sb = ResourceLoader.load(val_path)
-									if sb is StyleBoxTexture and sb.texture:
-										svg_key = sb.texture.resource_path.get_file()
+									if sb is StyleBox:
+										active_stylebox = sb
+										if sb is StyleBoxTexture and sb.texture:
+											svg_key = sb.texture.resource_path.get_file()
 								
 								if svg_key == "":
 									var record_id = _get_part_id(record)
@@ -1241,11 +1292,64 @@ func _on_apply_preview_pressed() -> void:
 												design_height = float(meta_entry.get("height", 0.0))
 												break
 								
+						
 						if design_width == 0.0 and common_width > 0.0:
 							design_width = common_width
 							design_height = common_height
 							
 						setup_preview_node(inst, item_text)
+						
+						# If stylebox wasn't directly loaded, look it up in the compiled theme
+						if active_stylebox == null:
+							var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
+							var stylebox_prop_name = state
+							if state == "read_only":
+								stylebox_prop_name = "read_only"
+								
+							if temp_theme.has_stylebox(stylebox_prop_name, theme_type):
+								active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, theme_type)
+							else:
+								# Fallback to the variation base class in the theme (e.g. Button)
+								var base_type = theme_variations.get(theme_type, "")
+								if base_type != "" and temp_theme.has_stylebox(stylebox_prop_name, base_type):
+									active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, base_type)
+								else:
+									# Fallback to the class name itself (e.g. Button)
+									var cls_name = inst.get_class()
+									if temp_theme.has_stylebox(stylebox_prop_name, cls_name):
+										active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, cls_name)
+
+						# Apply theme overrides to freeze the button's appearance and prevent visual changes on hover/focus/pressed
+						# Only freeze the appearance if this is NOT the 'normal' state, so normal preview nodes show hover effects!
+						if state != "normal" and active_stylebox != null:
+							var overrides: Array[String] = []
+							if inst is Button:
+								overrides = ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]
+							elif inst is LineEdit:
+								overrides = ["normal", "read_only", "focus"]
+							elif inst is TextEdit:
+								overrides = ["normal", "read_only", "focus"]
+							else:
+								overrides = ["normal", "panel"]
+								
+							for override_name in overrides:
+								inst.add_theme_stylebox_override(override_name, active_stylebox)
+								
+							# Also freeze font colors if defined in the compiled theme
+							var color_names = ["font_color", "font_pressed_color", "font_hover_color", "font_focus_color", "font_disabled_color"]
+							var active_color_name = "font_color"
+							if state == "disabled":
+								active_color_name = "font_disabled_color"
+							elif state == "pressed":
+								active_color_name = "font_pressed_color"
+							elif state == "hover":
+								active_color_name = "font_hover_color"
+								
+							var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
+							if temp_theme.has_color(active_color_name, theme_type):
+								var color_val = temp_theme.get_color(active_color_name, theme_type)
+								for c_name in color_names:
+									inst.add_theme_color_override(c_name, color_val)
 						
 						# Apply sizing and shrink centering appropriately
 						if preview_item_width > 0:
@@ -1268,7 +1372,7 @@ func _on_apply_preview_pressed() -> void:
 						inst.set_meta("state", state)
 						
 						inst.gui_input.connect(_on_preview_item_gui_input.bind(inst))
-						preview_grid.add_child(inst)
+						sub_grid.add_child(inst)
 
 func instantiate_class_by_name(p_class: String) -> Control:
 	if ClassDB.class_exists(p_class):
@@ -2083,9 +2187,25 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		# Build programmatically styled StyleBoxFlat
 		var flat_sb = StyleBoxFlat.new()
 		
-		# Set border/corner radius (capsule corner, using half the height if height exists, otherwise a default of 30)
+		# Set border/corner radius (try to extract from SVG rect rx first, fall back to capsule corner)
 		var h = entry.get("height", 60.0)
-		var radius = int(float(h) / 2.0)
+		var radius = -1
+		var svg_path = image_folder.path_join(svg_key)
+		if FileAccess.file_exists(svg_path):
+			var file = FileAccess.open(svg_path, FileAccess.READ)
+			if file:
+				var svg_content = file.get_as_text()
+				file.close()
+				
+				var regex = RegEx.new()
+				regex.compile("<rect[^>]+rx=\"([0-9.]+)\"")
+				var result = regex.search(svg_content)
+				if result:
+					radius = int(float(result.get_string(1)))
+					
+		if radius < 0:
+			radius = int(float(h) / 2.0)
+			
 		flat_sb.corner_radius_top_left = radius
 		flat_sb.corner_radius_top_right = radius
 		flat_sb.corner_radius_bottom_right = radius
@@ -2102,19 +2222,29 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		var a = float(shadow_col_dict.get("a", 1.0))
 		var neon_color = Color(r, g, b, a)
 		
-		# Background color from Figma fills:
+		# Background color from Figma fills or childFills:
 		var fill_color = Color(0.08, 0.08, 0.1, 0.6) # Fallback bg_color
 		var fills = entry.get("fills", [])
-		if fills.size() > 0:
-			var first_fill = fills[0]
-			if first_fill is Dictionary and first_fill.get("type") == "SOLID":
-				var fill_col_dict = first_fill.get("color", {})
-				var fr = float(fill_col_dict.get("r", 0.0))
-				var fg = float(fill_col_dict.get("g", 0.0))
-				var fb = float(fill_col_dict.get("b", 0.0))
-				var fopacity = float(first_fill.get("opacity", 1.0))
-				var fa = float(fill_col_dict.get("a", fopacity))
-				fill_color = Color(fr, fg, fb, fa)
+		if fills.is_empty():
+			fills = entry.get("childFills", [])
+			
+		var solid_fill = null
+		for fill in fills:
+			if fill is Dictionary and fill.get("type") == "SOLID":
+				var node_name = fill.get("nodeName", "")
+				if node_name == "Text" or node_name.to_lower() == "text":
+					continue
+				solid_fill = fill
+				break
+				
+		if solid_fill != null:
+			var fill_col_dict = solid_fill.get("color", {})
+			var fr = float(fill_col_dict.get("r", 0.0))
+			var fg = float(fill_col_dict.get("g", 0.0))
+			var fb = float(fill_col_dict.get("b", 0.0))
+			var fopacity = float(solid_fill.get("opacity", 1.0))
+			var fa = float(fill_col_dict.get("a", fopacity))
+			fill_color = Color(fr, fg, fb, fa)
 		
 		flat_sb.bg_color = fill_color
 		
@@ -2150,6 +2280,7 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		# Build StyleBoxTexture using the SVG path
 		var tex_sb = StyleBoxTexture.new()
 		var svg_path = image_folder.path_join(svg_key)
+		var svg_modified = false
 		
 		# Load textures sizes to calculate expansion padding margins
 		var tex_w = 200.0
@@ -2169,35 +2300,88 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		
 		# Inject designed solid background color fills programmatically directly into the SVG
 		var fills = entry.get("fills", [])
-		if fills.size() > 0:
-			var first_fill = fills[0]
-			if first_fill is Dictionary and first_fill.get("type") == "SOLID":
-				var fill_col_dict = first_fill.get("color", {})
-				var fr = float(fill_col_dict.get("r", 0.0))
-				var fg = float(fill_col_dict.get("g", 0.0))
-				var fb = float(fill_col_dict.get("b", 0.0))
-				var fill_opacity = float(first_fill.get("opacity", 1.0))
-				var col = Color(fr, fg, fb)
-				var fill_color = "#" + col.to_html(false)
-				var rx = design_h / 2.0
-				var rect_svg = '<rect id="figma_bg_inject" x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" fill-opacity="%f"/>' % [pad_x, pad_y, design_w, design_h, rx, rx, fill_color, fill_opacity]
+		if fills.is_empty():
+			fills = entry.get("childFills", [])
+			
+		var solid_fill = null
+		for fill in fills:
+			if fill is Dictionary and fill.get("type") == "SOLID":
+				var node_name = fill.get("nodeName", "")
+				if node_name == "Text" or node_name.to_lower() == "text":
+					continue
+				solid_fill = fill
+				break
 				
-				if FileAccess.file_exists(svg_path):
-					var file = FileAccess.open(svg_path, FileAccess.READ)
-					if file:
-						var svg_text = file.get_as_text()
-						file.close()
+		# Clean any old figma_bg_inject rect first, and inject the new one if solid_fill is not null
+		if FileAccess.file_exists(svg_path):
+			var file = FileAccess.open(svg_path, FileAccess.READ)
+			if file:
+				var svg_text = file.get_as_text()
+				file.close()
+				
+				# Remove any existing injected background rect
+				var regex = RegEx.new()
+				regex.compile("<rect\\s+id=\"figma_bg_inject\"[^>]+>")
+				var cleaned_svg = regex.sub(svg_text, "", true)
+				
+				var changed = (cleaned_svg != svg_text)
+				svg_text = cleaned_svg
+				
+				if solid_fill != null:
+					var fill_col_dict = solid_fill.get("color", {})
+					var fr = float(fill_col_dict.get("r", 0.0))
+					var fg = float(fill_col_dict.get("g", 0.0))
+					var fb = float(fill_col_dict.get("b", 0.0))
+					var fill_opacity = float(solid_fill.get("opacity", 1.0))
+					var col = Color(fr, fg, fb)
+					var fill_color = "#" + col.to_html(false)
+					# Try to parse corner radius (rx) from the SVG's remaining elements first, fallback to half height
+					var rx = design_h / 2.0
+					var r_regex = RegEx.new()
+					r_regex.compile("<rect[^>]+rx=\"([0-9.]+)\"")
+					var r_result = r_regex.search(svg_text)
+					if r_result:
+						rx = float(r_result.get_string(1))
 						
-						var svg_tag_end = svg_text.find(">", svg_text.find("<svg"))
-						if svg_tag_end != -1 and not "figma_bg_inject" in svg_text:
-							svg_text = svg_text.insert(svg_tag_end + 1, "\n" + rect_svg)
-							var write_file = FileAccess.open(svg_path, FileAccess.WRITE)
-							if write_file:
-								write_file.store_string(svg_text)
-								write_file.close()
-								print("Injected Figma solid background fill into SVG: ", svg_path)
+					var rect_svg = '<rect id="figma_bg_inject" x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" fill-opacity="%f"/>' % [pad_x, pad_y, design_w, design_h, rx, rx, fill_color, fill_opacity]
+					
+					var svg_tag_end = svg_text.find(">", svg_text.find("<svg"))
+					if svg_tag_end != -1:
+						svg_text = svg_text.insert(svg_tag_end + 1, "\n" + rect_svg)
+						changed = true
+						print("Injected Figma solid background fill into SVG: ", svg_path)
+						
+				if changed:
+					var write_file = FileAccess.open(svg_path, FileAccess.WRITE)
+					if write_file:
+						write_file.store_string(svg_text)
+						write_file.close()
+						svg_modified = true
 		
+		# Clean SVG filters (this also might modify the file)
+		var old_content = ""
+		if FileAccess.file_exists(svg_path):
+			var file = FileAccess.open(svg_path, FileAccess.READ)
+			if file:
+				old_content = file.get_as_text()
+				file.close()
+				
 		_clean_svg_filters(svg_path)
+		
+		# Check if clean_svg_filters actually modified it
+		if not svg_modified and FileAccess.file_exists(svg_path):
+			var file = FileAccess.open(svg_path, FileAccess.READ)
+			if file:
+				var new_content = file.get_as_text()
+				file.close()
+				if new_content != old_content:
+					svg_modified = true
+					
+		# If the SVG file was modified, force Godot to re-import it so the texture updates in memory
+		if svg_modified and Engine.is_editor_hint():
+			var file_system = EditorInterface.get_resource_filesystem()
+			if file_system:
+				file_system.reimport_files([svg_path])
 		
 		var tex = null
 		if ResourceLoader.exists(svg_path):
