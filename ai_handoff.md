@@ -7,109 +7,83 @@ This file contains the complete context, architectural choices, constraints, and
 ## 1. Project Context & Purpose
 The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Generator** located in `addons/anomalyAcesThemeGenerator/`. 
 * **Input**: Figma metadata files (`metadata.json`), local image SVG resources, local fonts, and parts builder configurations.
-* **Output**: A native Godot `Theme` resource (`.tres` or `.theme` file) that can be directly applied to control nodes within the engine.
+* **Output**: A native Godot `Theme` resource (`.tres` or `.theme` file) that can be directly applied to control nodes within the engine, bundled with self-contained assets and exported `theme_preview.tscn` standalone preview scenes.
 
 ---
 
 ## 2. Recent Implementation & Completed Work
 
-### A. Configuration Suffix Cleanup & Duplicate Pruning
+### A. Modular Refactoring of Monolithic Controller
+* Refactored the monolithic 3,187-line `AceThemeGenerator.gd` into a clean **Orchestrator + RefCounted Composition Architecture**.
+* Split business logic into **8 dedicated helper scripts** in `addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/`:
+  - `DialogUtils.gd`: File/directory picker dialogs & warning popups.
+  - `StyleboxBuilder.gd`: Figma metadata-driven `StyleBoxFlat` & `StyleBoxTexture` compilation.
+  - `SvgUtils.gd`: SVG directory scanning, filter cleaning regex, and DPI texture reimporting.
+  - `ThemeBuilder.gd`: Native Godot `Theme` object assembly in memory.
+  - `ThemeConfig.gd`: `config.json` load, save, path migration, directory creation, and JSON import.
+  - `ThemeExporter.gd`: Native `.tres` theme saving, package export, `res://` path rewriting, and standalone `theme_preview.tscn` export.
+  - `ThemePartsManager.gd`: Theme parts CRUD, Tree view rendering, property option populating, and deduplication.
+  - `ThemePreview.gd`: Live preview grid generation, state node freezing, component size resolution, and double-click inline text editing.
+* Replaced monolithic controller with a slim (~280 line) orchestrator script `AceThemeGenerator.gd` that preloads and instantiates the 8 helper scripts during `_init(self)`.
+
+### B. Project Documentation (`USER_GUIDE.md` & `DEVELOPER_GUIDE.md`)
+* Created **`USER_GUIDE.md`** in project root: Step-by-step user guide covering installation, configuration, metadata stylebox building, theme overrides, custom type variations, live previews, in-place text editing, theme packaging, and troubleshooting.
+* Created **`DEVELOPER_GUIDE.md`** in project root: Complete developer guide detailing the modular architecture, composition design patterns, file breakdown, key variables, and function signatures.
+
+### C. Ground Truth SVG Aspect Ratio & Component Dimension Resolution
+* **Figma Metadata Suffix Stripping**: Updated metadata lookups in `ThemePreview.gd` (`_lookup_metadata_dimensions`) with fuzzy suffix stripping (`_regular`, `_hover`, `_pressed`, `_disabled`, `_normal`) and word matching (e.g. `pressed_button` -> `Button_-_Pressed.svg`).
+* **Texture Size Ground Truth**: Prioritized `StyleBoxTexture.texture.get_size()` minus `expand_margin` padding in `resolve_design_dimensions()` as primary ground truth for inner component body dimensions. This fixed aspect-ratio stretching on split toggle buttons (`ToggleGenderFemaleButton`, `ToggleGenderMaleButton`), maintaining their native 176×61 (2.885:1) SVG proportions.
+* **Pixel-Perfect State Symmetry**: Compensated for `StyleBoxFlat` drop shadow margins and `StyleBoxTexture` expand margins. Buttons across all states (`Normal`, `Hover`, `Pressed`, `Disabled`) for `BackButton`, `ColorSelectButton`, `DecreaseButton`, `ForwardButton`, and `IncreaseButton` now share 100% pixel-identical inner component body sizes (e.g., `60×60` or `200×60`).
+
+### D. Configuration Suffix Cleanup & Duplicate Pruning
 * Grouped all theme parts keys by base name on load/save in `_cleanup_unique_properties()`.
 * Automatically strips copy-suffixes (like `normal_copy` -> `normal`) from unique properties.
-* Keeps the active copy during editing but automatically prunes stale/inactive duplicate override keys on configuration load/save, resolving duplicate configuration bloat.
+* Keeps the active copy during editing but automatically prunes stale/inactive duplicate override keys on configuration load/save.
 
-### B. Metadata-Based StyleBox Builder (Opt-In Checkbox)
+### E. Metadata-Based StyleBox Builder (Opt-In Checkbox)
 * Added a `"Build from Metadata"` checkbox dynamically positioned right under the `"Property Type"` dropdown in the Parts Builder.
 * Visible only for `StyleBox` property types. When opted-in, displays a dropdown containing SVG elements from `metadata.json` and a `"Build..."` compilation button.
-* **Overwriting Safety Guard**: Aborts and prevents overwriting of values if the build checkbox is not checked.
-* **StyleBox Auto-Generation**:
-  * **With Drop Shadow**: If the SVG entry in `metadata.json` has a `DROP_SHADOW` effect, builds a programmatically styled `StyleBoxFlat` with capsule corners (half of SVG height), border width of 2, a solid background color parsed from Figma fills (with fallback to semi-transparent dark charcoal), a neon border/shadow color, and a dynamically scaled shadow opacity based on Figma blur radius:
-    $$\text{Alpha Scale} = \text{clamp}\left(\frac{12.0}{\text{Figma Radius}}, 0.15, 1.0\right)$$
-    This formula mathematically converts Figma's diffuse web blurs to Godot's shadow falloff gradient.
-  * **Standard Vector**: If no drop shadow is present, builds a `StyleBoxTexture` utilizing the SVG directly.
-  * Enforces standard button margins (`L=6, R=6, T=4, B=4`).
+* Overwriting safety guards prevent accidental data loss if opt-in is unchecked.
 
-### C. In-Memory Cache Invalidation
-* Programmed the stylebox builder to reload generated resource files utilizing Godot's `ResourceLoader.CACHE_MODE_REPLACE` mode. This invalidates the cached resource in memory, allowing changes (e.g. converting a stylebox from texture to flat, or changing shadow size/radius) to propagate instantly inside the Godot editor viewport without reloading the project.
-
-### D. Parent Panel Container Live Preview
-* Reverted wrapping individual preview controls in cards. The preview controls are added directly to the preview grid container.
-* Restructured `PreviewArea` (which is a `PanelContainer` styled by the theme currently being compiled) to hold a `VBoxContainer` with a subtle `"Panel Container"` Label at the top and the ScrollContainer below (with 15px separation).
-* Wrapped the inner `PreviewGrid` inside a `MarginContainer` with **60px margins on all sides** so neon glows and shadow offsets do not get clipped by the ScrollContainer boundaries.
-
-### E. Headless & Non-Editor Test Fallbacks
-* Replaced direct editor-only `EditorResourcePicker` instantiations with a conditional fallback to `Button` when running headlessly or outside the editor, preventing crashes during automated CI/CD testing.
-
-### F. Workspace Test Safety
-* Implemented `config.json` backup and restore logic inside `test_stylebox_builder.gd` to prevent automated tests from permanently polluting or corrupting local workspace settings.
-
-### G. UI Scaling and Layout Improvements
-* **Editor Theme Inheritance**: Assigned the main theme generator instance's `theme` property to the editor's base control theme, letting the plugin inherit native styling, fonts, and DPI scaling automatically.
-* **Dynamic Override Font Scaling**: Implemented dynamic scaling of hardcoded font size overrides and tree heights in `AceThemeGenerator.gd` using `EditorInterface.get_editor_scale()`.
-* **Configured Overrides Expansion**: Enabled vertical size flags (`size_flags_vertical = 3`) on `PartsBuilderPanel`, its nested `VBox`/`PartsBuilderContent` containers, and `PartsTree` itself to stretch it to fill the remaining height of the left panel.
-
-### H. Override Form Preservation & Safe Duplicate Keys
-* Fixed a bug where creating a **New Override** overwrote active properties by automatically generating unique copy keys (e.g. `normal_copy`).
-* Preserved user form inputs (Property Type, Property Name, Override Name/ID) and the **Build from Metadata** checkbox when switching categories or adding overrides.
-
-### I. Dynamic Preview Width & Uniform Columns
-* Added an **Item Width** SpinBox. When `width > 0`, constraints are applied to all elements uniformly in the grid columns, preventing Godot from stretching columns unevenly.
-* Configured the grid's horizontal flag to `SIZE_SHRINK_CENTER` to keep the layout snug and clean.
-
-### J. In-Place Double-Click Text Editing
-* Left double-clicks on preview controls spawn a borderless overlay LineEdit that inherits the control's font family, color, and size.
-* The customized string is automatically saved in `config.json` mapping `ctrl_type + "_" + state` to values, and restored upon preview redrawing.
-* Supported typing empty strings `""` to preview textless panels, and special keywords like `default` or `reset` to clear configs.
-
-### K. 1:1 Figma Design Size Alignment
-* Loaded figma metadata dimension parameters. If Item Width is `0` (Auto), controls automatically size themselves to their 1:1 designed dimensions (e.g., 200x60, 60x60).
-* Enabled text clipping (`clip_text`) on constrained elements to prevent long text strings (e.g. `"BackButton (Button) (Disabled)"`) from stretching small icon buttons out of shape.
-* Traces resource stylebox paths back to their source SVG filenames to resolve metadata lookups even if custom override IDs or suffix-copies are present.
-
-### L. Automatic State Sizing Fallback
-* Standardized button dimensions across all states: if a state fails to trace a design size (such as the pressed flat StyleBox), it automatically adopts a fallback from another state of the same control type (e.g., matching the normal state's 200x60 scale).
-
-### M. Custom Shape Safety & SVG Filter Stripping
-* Prevented custom shapes (arrows, knobs, toggles, sliders) with drop shadows from being compiled as flat rectangles, forcing them to remain as `StyleBoxTexture` resources.
-* Automatically strips unsupported SVG `filter="url(#...)"` properties on import, bypassing Godot's ThorVG renderer bugs and restoring full rendering of hidden circle and arrow vector shapes.
-* Calculates Figma shadow border padding and applies it to the `StyleBoxTexture`'s `expand_margin` properties, drawing glows outside the button bounds while keeping the core button exactly at its designed 1:1 size.
-
-### N. Preview Node Visual Freeze Overrides
-* Applied local theme overrides to preview controls, mapping the resolved state asset (and font colors) to all variant slots (`normal`, `hover`, `pressed`, `disabled`, `focus`, and `hover_pressed`).
-* This freezes their visual appearances, keeping the elements completely interactive for double-click text editing while preventing Godot from dynamically shifting styleboxes or font colors upon mouse hover or focus.
-* **Normal State Exemption**: Excluded elements representing the `"normal"` state from this freeze, allowing them to remain fully interactive and show transitions to hover and pressed states when hovered/clicked in the preview.
-* **Focus Preview State**: Added support to recognized and display `"focus"` overrides as their own dedicated preview nodes in the grid columns.
-* **childFills Fallback Support**: Programmed the stylebox compiler to read child vector node fills (`childFills`) as a fallback if frame-level fills (`fills`) are empty, preventing background color loss for components styled with nested shapes (like text input fields).
-* **SVG Corner Radius Parsing**: Configured the `StyleBoxFlat` builder to search the raw SVG file text for a `<rect>` node's `rx` attribute, matching the flat stylebox corner radius exactly to the original Figma design radius (e.g. `12px` for input boxes) instead of defaulting to a pill shape.
-* **Text & Vector Layer Fills Exclusion (Gender Toggle Fix)**: Expanded the `childFills` solid background fill filter in `AceThemeGenerator.gd` to ignore any child nodes containing `"text"`, `"label"`, `"vector"`, `"icon"`, or `"path"` in their `nodeName` (case-insensitive, e.g. `"label-text"`, `"Vector"`, `"Icon"`). This prevents transparent vector icons and label text colors from triggering erroneous opaque background rectangle (`figma_bg_inject`) injections—resolving white-on-white text invisibility issues on buttons such as `Gender_Toggle_-_Male_Regular.svg`.
-* **Stale Background Rect Cleanups**: Implemented dynamic background-rect stripping in the texture compiler to clean previous `figma_bg_inject` rect tags from target SVG files. If the design has no solid fill metadata (or only contains filtered foreground layers), the old background rect is completely stripped to restore the component's transparency.
-* **Immediate SVG Re-Importing**: Triggered `EditorInterface.get_resource_filesystem().reimport_files()` after any compilation modification (injecting background, cleaning filters, or stripping rects) so Godot immediately flushes texture cache and reloads files in-editor.
-* **Grouped Section Layouts**: Structured `%PreviewGrid`'s columns count to `1` (VBox mode) and grouped each control variation/type into individual sub-grid sections styled with custom colored headers and separation padding. This aligns cells cleanly and prevents wider components from stretching adjacent controls.
-* **Configurable Preview Font Sizes**: Re-added a `Font Size` SpinBox next to the column inputs, scaling both the preview nodes and their section title headers dynamically (with theme font size bypass if explicitly configured in compiled styles).
-* **Locked Vertical Layout Spacing**: Set `size_flags_vertical = Control.SIZE_SHRINK_CENTER` on preview nodes to halt Godot's GridContainer vertical stretching, making sure outline buttons (like decrease buttons) remain circular.
-* **Self-Contained Theme Packaging**: Generating the theme automatically packages the theme file along with all referenced styleboxes, SVG textures, `.import` configuration files, and custom fonts into relative subfolders inside the output directory. All internal `res://` paths inside the `.tres` files are rewritten in-place.
-* **Standalone Preview Scene Export**: Automatically exports a self-contained `theme_preview.tscn` styled with your packaged theme, ready to be opened in Godot or loaded in the default Theme Editor preview pane.
+### F. Self-Contained Theme Packaging & Preview Scene Export
+* Compiling a theme automatically packages the theme file along with all referenced styleboxes, SVG textures, `.import` configuration files, and custom fonts into relative subfolders inside the output directory (`ResourceFiles/`, `Images/`, `Fonts/`). All internal `res://` paths are rewritten in-place.
+* Automatically exports a self-contained `theme_preview.tscn` styled with your packaged theme, ready to be opened in Godot or loaded in the default Theme Editor preview pane.
 
 ---
 
-## 3. Key Godot 4.6 Constraints & Gotchas
+## 3. Key Godot 4.x Constraints & Gotchas
 
-* **@export_file Syntax**: Godot 4.6 does not support multiple extensions passed as a comma-separated single string. Multiple file extensions must be passed as separate arguments:
+* **@export_file Syntax**: Godot 4.x does not support multiple extensions passed as a comma-separated single string. Multiple file extensions must be passed as separate arguments:
   ```gdscript
   @export_file("*.tres", "*.theme") var output_file: String
   ```
-* **Popup Node Dialog Type-Safety**: The editor node picker callback `EditorInterface.popup_create_dialog()` requires type-safe parameters in Godot 4.6. The `blocklist` argument must be strictly typed as `Array[StringName]` rather than `PackedStringArray`, otherwise it will throw a type mismatch warning/error:
+* **Popup Node Dialog Type-Safety**: The editor node picker callback `EditorInterface.popup_create_dialog()` requires type-safe parameters. The `blocklist` argument must be strictly typed as `Array[StringName]`:
   ```gdscript
   var blocklist: Array[StringName] = []
   ```
+* **StyleBox Expand Margin vs. Shadow Size Padding**:
+  - `StyleBoxTexture` expand margins (`expand_margin_left/top/right/bottom`) expand the texture outward from the node rect.
+  - `StyleBoxFlat` drop shadow sizes (`shadow_size` + `shadow_offset`) draw glow pixels outward from the node rect.
+  - In theme preview sizing, expand margins must be subtracted from raw texture sizes (`tex_size - expand_margins`) to determine the true inner component body size.
 
 ---
 
 ## 4. File Map & Locations
-* **Main Generator Logic**: [AceThemeGenerator.gd](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
-* **Generator Scene UI**: [AceThemeGenerator.tscn](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
-* **Internal State config**: [config.json](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
-* **Plugin Configuration**: [plugin.cfg](file:///c:/Users/Jerek/Documents/Anomaly%20Aces/Anomaly%20Aces%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
+* **Main Generator Orchestrator**: [AceThemeGenerator.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.gd)
+* **Generator UI Scene**: [AceThemeGenerator.tscn](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/AceThemeGenerator.tscn)
+* **Helper Scripts Directory**: [Scripts/](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts)
+  - [DialogUtils.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/DialogUtils.gd)
+  - [StyleboxBuilder.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/StyleboxBuilder.gd)
+  - [SvgUtils.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/SvgUtils.gd)
+  - [ThemeBuilder.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemeBuilder.gd)
+  - [ThemeConfig.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemeConfig.gd)
+  - [ThemeExporter.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemeExporter.gd)
+  - [ThemePartsManager.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemePartsManager.gd)
+  - [ThemePreview.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemePreview.gd)
+* **User Guide Documentation**: [USER_GUIDE.md](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/USER_GUIDE.md)
+* **Developer Guide Documentation**: [DEVELOPER_GUIDE.md](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/DEVELOPER_GUIDE.md)
+* **Internal State config**: [config.json](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/working/config.json)
+* **Plugin Manifest**: [plugin.cfg](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/plugin.cfg)
 
 ---
 
