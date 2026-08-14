@@ -2797,8 +2797,8 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		var solid_fill = null
 		for fill in fills:
 			if fill is Dictionary and fill.get("type") == "SOLID":
-				var node_name = fill.get("nodeName", "")
-				if node_name == "Text" or node_name.to_lower() == "text":
+				var node_name = fill.get("nodeName", "").to_lower()
+				if "text" in node_name or "label" in node_name or "vector" in node_name or "icon" in node_name or "path" in node_name:
 					continue
 				solid_fill = fill
 				break
@@ -2872,8 +2872,8 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 		var solid_fill = null
 		for fill in fills:
 			if fill is Dictionary and fill.get("type") == "SOLID":
-				var node_name = fill.get("nodeName", "")
-				if node_name == "Text" or node_name.to_lower() == "text":
+				var node_name = fill.get("nodeName", "").to_lower()
+				if "text" in node_name or "label" in node_name or "vector" in node_name or "icon" in node_name or "path" in node_name:
 					continue
 				solid_fill = fill
 				break

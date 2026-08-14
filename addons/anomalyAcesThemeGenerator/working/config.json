@@ -26,7 +26,13 @@
 		"IncreaseButton_normal": "",
 		"IncreaseButton_pressed": "",
 		"LineEdit_normal": "",
-		"LineEdit_read_only": ""
+		"LineEdit_read_only": "",
+		"MaleButton_normal": "",
+		"MaleButton_pressed": "",
+		"ToggleGenderFemaleButton_normal": "",
+		"ToggleGenderFemaleButton_pressed": "",
+		"ToggleGenderMaleButton_normal": "",
+		"ToggleGenderMaleButton_pressed": ""
 	},
 	"theme_parts": {
 		"BackButton": {
@@ -204,6 +210,38 @@
 					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/test_panel_stylebox.tres"
 				}
 			}
+		},
+		"ToggleGenderFemaleButton": {
+			"styleboxes": {
+				"hover": {
+					"id": "toggle_gender_female_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Pressed_stylebox.tres"
+				},
+				"normal": {
+					"id": "toggle_gender_female_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Regular_stylebox.tres"
+				},
+				"pressed": {
+					"id": "toggle_gender_female_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Pressed_stylebox.tres"
+				}
+			}
+		},
+		"ToggleGenderMaleButton": {
+			"styleboxes": {
+				"hover": {
+					"id": "toggle_gender_male_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Pressed_stylebox.tres"
+				},
+				"normal": {
+					"id": "toggle_gender_male_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Regular_stylebox.tres"
+				},
+				"pressed": {
+					"id": "toggle_gender_male_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Pressed_stylebox.tres"
+				}
+			}
 		}
 	},
 	"theme_variations": {
@@ -212,8 +250,11 @@
 		"ColorSelectionPanel": "Panel",
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
+		"GenderToggleMaleButton": "Button",
 		"IncreaseButton": "Button",
 		"LineEditError": "LineEdit",
-		"LineEditErrorLabel": "Label"
+		"LineEditErrorLabel": "Label",
+		"ToggleGenderFemaleButton": "Button",
+		"ToggleGenderMaleButton": "Button"
 	}
 }
