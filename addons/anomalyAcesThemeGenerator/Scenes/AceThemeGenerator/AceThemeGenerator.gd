@@ -53,6 +53,7 @@ var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes
 @onready var parts_builder_content: VBoxContainer = %PartsBuilderContent
 
 @onready var preview_columns_spin: SpinBox = %PreviewColumnsSpin
+@onready var settings_view_option: OptionButton = %SettingsViewOption
 @onready var new_override_btn: Button = %NewOverrideBtn
 @onready var duplicate_override_btn: Button = %DuplicateOverrideBtn
 @onready var delete_override_btn: Button = %DeleteOverrideBtn
@@ -68,6 +69,7 @@ var preview_item_width_spin: SpinBox
 var preview_font_size: int = 16
 var preview_font_size_spin: SpinBox
 var preview_texts: Dictionary = {}
+var settings_split_ratio: float = 0.5
 var _target_select_meta = null
 var _active_prop_key: String = ""
 var _creating_new_override: bool = false
@@ -134,7 +136,10 @@ func _ready() -> void:
 	_config.load_config()
 	_parts_manager.refresh_parts_tree()
 	_preview.apply_preview()
-	h_split.resized.connect(_on_h_split_resized)
+	
+	if h_split:
+		h_split.dragged.connect(_on_h_split_dragged)
+		call_deferred("_apply_settings_split_ratio")
 
 func setup_ui() -> void:
 	print("AceThemeGenerator setup_ui() called.")
@@ -243,6 +248,15 @@ func setup_ui() -> void:
 		preview_font_size_spin.value_changed.connect(_on_preview_font_size_changed)
 		header_box.add_child(preview_font_size_spin)
 		
+	if settings_view_option:
+		settings_view_option.clear()
+		settings_view_option.add_item("20% Settings (80% Preview)")
+		settings_view_option.add_item("50% Split")
+		settings_view_option.add_item("80% Settings (20% Preview)")
+		settings_view_option.add_item("100% Full Settings")
+		settings_view_option.selected = 1 # Default to 50% Split
+		settings_view_option.item_selected.connect(_on_settings_view_option_selected)
+
 	_apply_editor_scaling()
 
 func _apply_editor_scaling() -> void:
@@ -256,7 +270,7 @@ func _apply_editor_scaling() -> void:
 	print("Applying editor scaling of ", scale, " to AceThemeGenerator UI.")
 	
 	# Scale font sizes for nodes that have hardcoded overrides in the tscn
-	var title_lbl = $MainPanel/HSplit/LeftScroll/LeftBox/TitleLabel
+	var title_lbl = get_node_or_null("MainPanel/HSplit/LeftScroll/LeftBox/TitleLabel") as Label
 	if title_lbl:
 		title_lbl.add_theme_font_size_override("font_size", int(20 * scale))
 		
@@ -363,5 +377,55 @@ func _on_preview_font_size_changed(value: float) -> void:
 	_config.save_config()
 	_preview.apply_preview()
 
-func _on_h_split_resized() -> void:
-	h_split.split_offset = int(h_split.size.x * 0.4) - int(h_split.size.x * 0.5)
+func _on_settings_view_option_selected(idx: int) -> void:
+	match idx:
+		0: settings_split_ratio = 0.20
+		1: settings_split_ratio = 0.50
+		2: settings_split_ratio = 0.80
+		3: settings_split_ratio = 0.98
+	_apply_settings_split_ratio()
+	_config.save_config()
+
+func set_settings_panel_view_ratio(ratio: float) -> void:
+	settings_split_ratio = clamp(ratio, 0.05, 1.0)
+	_apply_settings_split_ratio()
+	_config.save_config()
+
+func _apply_settings_split_ratio() -> void:
+	if not h_split:
+		return
+	var total_w = h_split.size.x
+	if total_w <= 0:
+		total_w = h_split.get_rect().size.x
+	if total_w <= 0:
+		total_w = get_viewport_rect().size.x
+	if total_w > 0:
+		h_split.split_offset = int(total_w * (settings_split_ratio - 0.5))
+		
+	if settings_view_option:
+		if abs(settings_split_ratio - 0.20) < 0.05:
+			settings_view_option.selected = 0
+		elif abs(settings_split_ratio - 0.50) < 0.05:
+			settings_view_option.selected = 1
+		elif abs(settings_split_ratio - 0.80) < 0.05:
+			settings_view_option.selected = 2
+		elif abs(settings_split_ratio - 0.98) < 0.05:
+			settings_view_option.selected = 3
+
+func _on_h_split_dragged(offset: int) -> void:
+	var total_w = h_split.size.x
+	if total_w <= 0:
+		total_w = h_split.get_rect().size.x
+	if total_w > 0:
+		settings_split_ratio = clamp((float(offset) + total_w * 0.5) / total_w, 0.05, 1.0)
+		_config.save_config()
+		
+		if settings_view_option:
+			if abs(settings_split_ratio - 0.20) < 0.05:
+				settings_view_option.selected = 0
+			elif abs(settings_split_ratio - 0.50) < 0.05:
+				settings_view_option.selected = 1
+			elif abs(settings_split_ratio - 0.80) < 0.05:
+				settings_view_option.selected = 2
+			elif abs(settings_split_ratio - 0.98) < 0.05:
+				settings_view_option.selected = 3

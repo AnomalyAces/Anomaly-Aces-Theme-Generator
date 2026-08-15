@@ -311,195 +311,251 @@ func apply_preview() -> void:
 			_owner.preview_grid.columns = 1
 			_owner.preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			
-			# Instantiate and add nodes that are defined in theme_parts
+			# Group control types by their Base Engine Class (e.g. Button + Button variations, HSlider + HSlider variations)
+			var base_groups = {}
+			var group_order = []
+			
 			for ctrl_type in _owner.theme_parts.keys():
 				if ctrl_type == "PanelContainer":
 					continue
 					
-				# Create section container
-				var section_box = VBoxContainer.new()
-				section_box.name = ctrl_type + "_Section"
-				section_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				section_box.add_theme_constant_override("separation", 10)
-				
-				# Create section header
-				var header_box = VBoxContainer.new()
-				header_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				
-				var header_lbl = Label.new()
-				var type_display = ctrl_type
+				var base_class = ctrl_type
 				if _owner.theme_variations.has(ctrl_type) and _owner.theme_variations[ctrl_type] != "":
-					type_display += " (Variation of " + _owner.theme_variations[ctrl_type] + ")"
-				header_lbl.text = type_display
-				header_lbl.add_theme_font_size_override("font_size", _owner.preview_font_size + 4)
-				header_lbl.add_theme_color_override("font_color", Color(0.26, 0.95, 1.0, 1.0)) # Neon Cyan
-				
-				var separator = HSeparator.new()
-				separator.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				
-				header_box.add_child(header_lbl)
-				header_box.add_child(separator)
-				section_box.add_child(header_box)
-				
-				# Create the sub-grid for states
-				var sub_grid = GridContainer.new()
-				sub_grid.columns = _owner.preview_columns
-				sub_grid.add_theme_constant_override("h_separation", 15)
-				sub_grid.add_theme_constant_override("v_separation", 15)
-				
-				if _owner.preview_item_width > 0:
-					sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-				else:
-					sub_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					base_class = _owner.theme_variations[ctrl_type]
 					
-				section_box.add_child(sub_grid)
-				_owner.preview_grid.add_child(section_box)
-				
-				# Add padding spacing margin at the bottom of the section
-				var spacer = Control.new()
-				spacer.custom_minimum_size = Vector2(0, 15)
-				_owner.preview_grid.add_child(spacer)
-				var states = get_configured_states(ctrl_type)
-				
-				# Find a common design size from any state of this control type to use as fallback
-				var common_size = _find_common_design_size(ctrl_type, states, metadata)
+				if not base_groups.has(base_class):
+					base_groups[base_class] = []
+					group_order.append(base_class)
 					
-				for state in states:
-					var inst: Control = null
-					var display_name = ctrl_type
+				base_groups[base_class].append(ctrl_type)
+				
+			group_order.sort()
+			
+			# Sort members inside each group: base class first, variations alphabetically
+			for base_class in base_groups.keys():
+				var members: Array = base_groups[base_class]
+				members.sort_custom(func(a, b):
+					if a == base_class:
+						return true
+					if b == base_class:
+						return false
+					return a < b
+				)
+				
+			# Render sections grouped by base engine class family
+			for base_class in group_order:
+				var family_members: Array = base_groups[base_class]
+				
+				# Create a parent family group box
+				var family_box = VBoxContainer.new()
+				family_box.name = base_class + "_Family_Group"
+				family_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				family_box.add_theme_constant_override("separation", 15)
+				
+				# Create family group header
+				var family_header = VBoxContainer.new()
+				family_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				
+				var family_lbl = Label.new()
+				var var_count = family_members.size() - (1 if family_members.has(base_class) else 0)
+				var family_title = base_class.to_upper() + " CONTROLS"
+				if var_count > 0:
+					family_title += " (" + str(var_count) + " Variation" + ("s" if var_count > 1 else "") + ")"
+				family_lbl.text = family_title
+				family_lbl.add_theme_font_size_override("font_size", _owner.preview_font_size + 6)
+				family_lbl.add_theme_color_override("font_color", Color(0.26, 0.95, 1.0, 1.0)) # Neon Cyan
+				
+				var family_sep = HSeparator.new()
+				family_sep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				
+				family_header.add_child(family_lbl)
+				family_header.add_child(family_sep)
+				family_box.add_child(family_header)
+				
+				# Render each member in this family group
+				for ctrl_type in family_members:
+					var section_box = VBoxContainer.new()
+					section_box.name = ctrl_type + "_Section"
+					section_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					section_box.add_theme_constant_override("separation", 8)
 					
-					# Check if this is a custom variation
+					var header_box = VBoxContainer.new()
+					header_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					
+					var header_lbl = Label.new()
+					var type_display = ctrl_type
 					if _owner.theme_variations.has(ctrl_type) and _owner.theme_variations[ctrl_type] != "":
-						var base_type = _owner.theme_variations[ctrl_type]
-						inst = instantiate_class_by_name(base_type)
-						if inst:
-							inst.theme_type_variation = ctrl_type
-							display_name = ctrl_type + " (" + base_type + ")"
+						type_display += "  [Variation of " + _owner.theme_variations[ctrl_type] + "]"
 					else:
-						inst = instantiate_class_by_name(ctrl_type)
+						type_display += "  [Base Class]"
+					header_lbl.text = type_display
+					header_lbl.add_theme_font_size_override("font_size", _owner.preview_font_size + 2)
+					header_lbl.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0, 1.0))
+					
+					header_box.add_child(header_lbl)
+					section_box.add_child(header_box)
+					
+					# Create the sub-grid for states
+					var sub_grid = GridContainer.new()
+					sub_grid.columns = _owner.preview_columns
+					sub_grid.add_theme_constant_override("h_separation", 15)
+					sub_grid.add_theme_constant_override("v_separation", 15)
+					
+					if _owner.preview_item_width > 0:
+						sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+					else:
+						sub_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 						
-					if inst:
-						var active_stylebox: StyleBox = null
-						# Apply state to the instantiated node
-						if state == "disabled" and "disabled" in inst:
-							inst.disabled = true
-							display_name += " (Disabled)"
-						elif state == "pressed" and "button_pressed" in inst:
-							if "toggle_mode" in inst:
-								inst.toggle_mode = true
-							inst.button_pressed = true
-							display_name += " (Pressed)"
-						elif state == "read_only":
-							if "editable" in inst:
-								inst.editable = false
-							elif "read_only" in inst:
-								inst.read_only = true
-							display_name += " (Read Only)"
-						elif state == "focus":
-							display_name += " (Focus)"
-							
-						var text_key = ctrl_type + "_" + state
-						var item_text = display_name
-						if _owner.preview_texts.has(text_key):
-							item_text = _owner.preview_texts[text_key]
-							
-						# Fetch design size from Figma metadata or StyleBox texture/minimum size
-						var design_width = 0.0
-						var design_height = 0.0
-						var record = null
-						var val_path = ""
-						if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
-							var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
-							for key in sboxes.keys():
-								if _owner.get_base_prop_name(key) == state:
-									record = sboxes[key]
-									break
-							
-							if record != null:
-								val_path = str(_owner.get_part_value(record))
-								if val_path != "" and ResourceLoader.exists(val_path):
-									var sb = load_stylebox_uncached(val_path)
-									if sb is StyleBox:
-										active_stylebox = sb
-										
-						setup_preview_node(inst, item_text, temp_theme)
+					section_box.add_child(sub_grid)
+					family_box.add_child(section_box)
+					
+					var states = get_configured_states(ctrl_type)
+					var common_size = _find_common_design_size(ctrl_type, states, metadata)
+					
+					for state in states:
+						var inst: Control = null
+						var display_name = ctrl_type
 						
-						# If stylebox wasn't directly loaded, look it up in the compiled theme
-						if active_stylebox == null:
-							var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
-							var stylebox_prop_name = state
-							if state == "read_only":
-								stylebox_prop_name = "read_only"
+						# Check if this is a custom variation
+						if _owner.theme_variations.has(ctrl_type) and _owner.theme_variations[ctrl_type] != "":
+							var base_type = _owner.theme_variations[ctrl_type]
+							inst = instantiate_class_by_name(base_type)
+							if inst:
+								inst.theme_type_variation = ctrl_type
+								display_name = ctrl_type + " (" + base_type + ")"
+						else:
+							inst = instantiate_class_by_name(ctrl_type)
+							
+						if inst:
+							var active_stylebox: StyleBox = null
+							# Apply state to the instantiated node
+							if state == "disabled" and "disabled" in inst:
+								inst.disabled = true
+								display_name += " (Disabled)"
+							elif state == "pressed" and "button_pressed" in inst:
+								if "toggle_mode" in inst:
+									inst.toggle_mode = true
+								inst.button_pressed = true
+								display_name += " (Pressed)"
+							elif state == "read_only":
+								if "editable" in inst:
+									inst.editable = false
+								elif "read_only" in inst:
+									inst.read_only = true
+								display_name += " (Read Only)"
+							elif state == "focus":
+								display_name += " (Focus)"
 								
-							if temp_theme.has_stylebox(stylebox_prop_name, theme_type):
-								active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, theme_type)
-							else:
-								# Fallback to the variation base class in the theme (e.g. Button)
-								var base_type = _owner.theme_variations.get(theme_type, "")
-								if base_type != "" and temp_theme.has_stylebox(stylebox_prop_name, base_type):
-									active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, base_type)
+							var text_key = ctrl_type + "_" + state
+							var item_text = display_name
+							if _owner.preview_texts.has(text_key):
+								item_text = _owner.preview_texts[text_key]
+								
+							# Fetch design size from Figma metadata or StyleBox texture/minimum size
+							var design_width = 0.0
+							var design_height = 0.0
+							var record = null
+							var val_path = ""
+							if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
+								var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
+								for key in sboxes.keys():
+									if _owner.get_base_prop_name(key) == state:
+										record = sboxes[key]
+										break
+								
+								if record != null:
+									val_path = str(_owner.get_part_value(record))
+									if val_path != "" and ResourceLoader.exists(val_path):
+										var sb = load_stylebox_uncached(val_path)
+										if sb is StyleBox:
+											active_stylebox = sb
+											
+							setup_preview_node(inst, item_text, temp_theme)
+							
+							# If stylebox wasn't directly loaded, look it up in the compiled theme
+							if active_stylebox == null:
+								var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
+								var stylebox_prop_name = state
+								if state == "read_only":
+									stylebox_prop_name = "read_only"
+									
+								if temp_theme.has_stylebox(stylebox_prop_name, theme_type):
+									active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, theme_type)
 								else:
-									# Fallback to the class name itself (e.g. Button)
-									var cls_name = inst.get_class()
-									if temp_theme.has_stylebox(stylebox_prop_name, cls_name):
-										active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, cls_name)
+									# Fallback to the variation base class in the theme (e.g. Button)
+									var base_type = _owner.theme_variations.get(theme_type, "")
+									if base_type != "" and temp_theme.has_stylebox(stylebox_prop_name, base_type):
+										active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, base_type)
+									else:
+										# Fallback to the class name itself (e.g. Button)
+										var cls_name = inst.get_class()
+										if temp_theme.has_stylebox(stylebox_prop_name, cls_name):
+											active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, cls_name)
 
-						# Resolve design size using metadata + active_stylebox texture fallback
-						if record != null:
-							var dims = resolve_design_dimensions(active_stylebox, record, val_path, metadata)
-							design_width = dims.x
-							design_height = dims.y
-						elif active_stylebox != null:
-							if active_stylebox is StyleBoxTexture and active_stylebox.texture:
-								var tex_sz = active_stylebox.texture.get_size()
-								design_width = tex_sz.x
-								design_height = tex_sz.y
-						
-						if design_width < 20.0 and common_size.x >= 20.0:
-							design_width = common_size.x
-							design_height = common_size.y
+							# Resolve design size using metadata + active_stylebox texture fallback
+							if record != null:
+								var dims = resolve_design_dimensions(active_stylebox, record, val_path, metadata)
+								design_width = dims.x
+								design_height = dims.y
+							elif active_stylebox != null:
+								if active_stylebox is StyleBoxTexture and active_stylebox.texture:
+									var tex_sz = active_stylebox.texture.get_size()
+									design_width = tex_sz.x
+									design_height = tex_sz.y
+							
+							if design_width < 20.0 and common_size.x >= 20.0:
+								design_width = common_size.x
+								design_height = common_size.y
 
-						# Apply theme overrides to freeze the button's appearance and prevent visual changes on hover/focus/pressed
-						# Only freeze the appearance if this is NOT the 'normal' state, so normal preview nodes show hover effects!
-						if state != "normal" and active_stylebox != null:
-							var overrides: Array[String] = []
-							if inst is Button:
-								overrides = ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]
-							elif inst is LineEdit:
-								overrides = ["normal", "read_only", "focus"]
-							elif inst is TextEdit:
-								overrides = ["normal", "read_only", "focus"]
-							else:
-								overrides = ["normal", "panel"]
-								
-							for override_name in overrides:
-								inst.add_theme_stylebox_override(override_name, active_stylebox)
-								
-							# Also freeze font colors if defined in the compiled theme
-							var color_names = ["font_color", "font_pressed_color", "font_hover_color", "font_focus_color", "font_disabled_color"]
-							var active_color_name = "font_color"
-							if state == "disabled":
-								active_color_name = "font_disabled_color"
-							elif state == "pressed":
-								active_color_name = "font_pressed_color"
-							elif state == "hover":
-								active_color_name = "font_hover_color"
-								
-							var theme_type2 = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
-							if temp_theme.has_color(active_color_name, theme_type2):
-								var color_val = temp_theme.get_color(active_color_name, theme_type2)
-								for c_name in color_names:
-									inst.add_theme_color_override(c_name, color_val)
-						
-						# Apply sizing and shrink centering appropriately with aspect ratio preservation and shadow margin compensation
-						apply_node_preview_sizing(inst, active_stylebox, design_width, design_height, _owner.preview_item_width)
-						
-						# Store metadata for editing and persistence
-						inst.set_meta("ctrl_type", ctrl_type)
-						inst.set_meta("state", state)
-						
-						inst.gui_input.connect(on_preview_item_gui_input.bind(inst))
-						sub_grid.add_child(inst)
+							# Apply theme overrides to freeze the button's appearance and prevent visual changes on hover/focus/pressed
+							# Only freeze the appearance if this is NOT the 'normal' state, so normal preview nodes show hover effects!
+							if state != "normal" and active_stylebox != null:
+								var overrides: Array[String] = []
+								if inst is Button:
+									overrides = ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]
+								elif inst is LineEdit:
+									overrides = ["normal", "read_only", "focus"]
+								elif inst is TextEdit:
+									overrides = ["normal", "read_only", "focus"]
+								else:
+									overrides = ["normal", "panel"]
+									
+								for override_name in overrides:
+									inst.add_theme_stylebox_override(override_name, active_stylebox)
+									
+								# Also freeze font colors if defined in the compiled theme
+								var color_names = ["font_color", "font_pressed_color", "font_hover_color", "font_focus_color", "font_disabled_color"]
+								var active_color_name = "font_color"
+								if state == "disabled":
+									active_color_name = "font_disabled_color"
+								elif state == "pressed":
+									active_color_name = "font_pressed_color"
+								elif state == "hover":
+									active_color_name = "font_hover_color"
+									
+								var theme_type2 = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
+								if temp_theme.has_color(active_color_name, theme_type2):
+									var color_val = temp_theme.get_color(active_color_name, theme_type2)
+									for c_name in color_names:
+										inst.add_theme_color_override(c_name, color_val)
+							
+							# Apply sizing and shrink centering appropriately with aspect ratio preservation and shadow margin compensation
+							apply_node_preview_sizing(inst, active_stylebox, design_width, design_height, _owner.preview_item_width)
+							
+							# Store metadata for editing and persistence
+							inst.set_meta("ctrl_type", ctrl_type)
+							inst.set_meta("state", state)
+							
+							inst.gui_input.connect(on_preview_item_gui_input.bind(inst))
+							sub_grid.add_child(inst)
+
+				# Add family box to main preview grid
+				_owner.preview_grid.add_child(family_box)
+				
+				# Add padding spacing margin at the bottom of the family group section
+				var family_spacer = Control.new()
+				family_spacer.custom_minimum_size = Vector2(0, 20)
+				_owner.preview_grid.add_child(family_spacer)
 
 func on_preview_item_gui_input(event: InputEvent, inst: Control) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click:

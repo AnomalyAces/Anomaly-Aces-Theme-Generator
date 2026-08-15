@@ -290,13 +290,15 @@ func update_value_input_control() -> void:
 
 	# Update visibility of Build from Metadata options (opt-in, right after Custom Name in Grid)
 	if _owner.metadata_build_check and _owner.metadata_build_label:
-		if prop_type == "stylebox":
+		if prop_type == "stylebox" or prop_type == "icon":
 			_owner.metadata_build_label.visible = true
 			_owner.metadata_build_check.visible = true
 			var pressed = _owner.metadata_build_check.button_pressed
 			if _owner.metadata_file_label: _owner.metadata_file_label.visible = pressed
 			if _owner.metadata_builder_box: _owner.metadata_builder_box.visible = pressed
 			_owner._stylebox_builder.refresh_metadata_dropdown()
+			if _owner.metadata_build_btn:
+				_owner.metadata_build_btn.text = "Build..."
 		else:
 			_owner.metadata_build_label.visible = false
 			_owner.metadata_build_check.visible = false
@@ -793,7 +795,10 @@ func on_resource_picker_changed(res: Resource) -> void:
 	if _owner._active_prop_key != "" and _owner.get_base_prop_name(_owner._active_prop_key) == prop_name:
 		prop_key = _owner._active_prop_key
 	var override_id = _owner.override_name_edit.text.strip_edges()
-	
+	if override_id == "" and res != null and res.resource_path != "":
+		override_id = res.resource_path.get_file().get_basename()
+		_owner.override_name_edit.text = override_id
+		
 	var sec = _owner.SECTION_MAP.get(prop_type, "")
 	if sec == "":
 		return

@@ -4,7 +4,7 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
-	"preview_font_size": 22,
+	"preview_font_size": 30,
 	"preview_item_width": 0,
 	"preview_texts": {
 		"BackButton_disabled": "",
@@ -22,6 +22,7 @@
 		"ForwardButton_disabled": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
+		"HSliderRed_normal": "",
 		"HSlider_normal": "",
 		"IncreaseButton_disabled": "",
 		"IncreaseButton_normal": "",
@@ -37,6 +38,7 @@
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
+	"settings_split_ratio": 0.480808080808081,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {
@@ -158,6 +160,18 @@
 				}
 			}
 		},
+		"HSliderRed": {
+			"icons": {
+				"grabber": {
+					"id": "red_slider_icon_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_icon.tres"
+				},
+				"grabber_highlight": {
+					"id": "red_slider_icon_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_highlight_icon.tres"
+				}
+			}
+		},
 		"IncreaseButton": {
 			"styleboxes": {
 				"disabled": {
@@ -270,6 +284,7 @@
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
 		"GenderToggleMaleButton": "Button",
+		"HSliderRed": "HSlider",
 		"IncreaseButton": "Button",
 		"LineEditError": "LineEdit",
 		"LineEditErrorLabel": "Label",

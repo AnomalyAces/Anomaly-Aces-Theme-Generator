@@ -49,7 +49,10 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 
 #### Lifecycle & Wiring Methods
 - `_ready()`: Instantiates helper objects, calls `setup_ui()`, loads configuration, builds parts tree, and initializes preview.
-- `setup_ui()`: Connects all UI buttons, spinboxes, line edits, and option dropdowns to helper functions.
+- `setup_ui()`: Connects UI buttons, spinboxes, line edits, option dropdowns, and `Settings Size: ▼` view presets.
+- `set_settings_panel_view_ratio(ratio: float)`: Dynamically computes `h_split.split_offset` and syncs dropdown selection.
+- `_apply_settings_split_ratio()`: Computes pixel split offset based on total container width and updates preset selection.
+- `_on_h_split_dragged(offset)`: Calculates settings split ratio during manual handle dragging and persists position.
 - `_apply_editor_scaling()`: Adjusts UI font sizes and minimum sizes dynamically based on Editor scale.
 
 #### Signal Handlers (Thin Wrappers)
@@ -60,21 +63,20 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 - `_on_images_browse_pressed()`, `_on_fonts_browse_pressed()`, `_on_metadata_browse_pressed()`, `_on_output_browse_pressed()`: Open browse file/directory dialogs.
 - `_on_settings_header_toggled(pressed)`, `_on_parts_builder_header_toggled(pressed)`: Toggle collapsible section visibility.
 - `_on_preview_columns_changed(value)`, `_on_preview_item_width_changed(value)`, `_on_preview_font_size_changed(value)`: Update preview parameters and refresh layout.
-- `_on_h_split_resized()`: Keeps split container proportions visually balanced.
 
 ---
 
 ### 2. `Scripts/ThemeConfig.gd`
 **Location:** [ThemeConfig.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemeConfig.gd)  
 **Inherits:** `RefCounted` (`@tool`)  
-**Responsibility:** Configuration file I/O operations, path fallbacks, data migration, and JSON import.
+**Responsibility:** Configuration file I/O operations, path fallbacks, data migration, split panel position persistence (`settings_split_ratio`), and JSON import.
 
 #### Functions
 - `_init(owner)`: Binds orchestrator instance.
 - `ensure_config_loaded()`: Lazy-loads configuration if not already loaded.
 - `ensure_dir_exists(path: String)`: Recursively creates missing directories.
-- `save_config()`: Serializes current paths, `theme_parts`, `theme_variations`, and preview settings to JSON (`config.json`).
-- `load_config()`: Reads JSON config, performs automatic migration from old path location, enforces directory creation, applies fallback paths, cleans up orphaned keys, and triggers SVG reimport.
+- `save_config()`: Serializes current paths, `theme_parts`, `theme_variations`, `settings_split_ratio`, and preview settings to JSON (`config.json`).
+- `load_config()`: Reads JSON config, restores `settings_split_ratio` (default `0.5`), performs automatic migration from old path location, enforces directory creation, applies fallback paths, cleans up orphaned keys, and triggers SVG reimport.
 - `import_config_from_file(file_path: String)`: Imports external `config.json` file into current workspace and refreshes UI.
 - `on_import_config_pressed()`: Opens file dialog to select a configuration JSON file to import.
 
@@ -83,14 +85,14 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 ### 3. `Scripts/ThemePartsManager.gd`
 **Location:** [ThemePartsManager.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemePartsManager.gd)  
 **Inherits:** `RefCounted` (`@tool`)  
-**Responsibility:** Theme parts dictionary CRUD operations, Tree view rendering, dynamic input control creation, property option populating, and deduplication.
+**Responsibility:** Theme parts dictionary CRUD operations, Tree view rendering, dynamic input control creation, property option populating, default override ID assignment, and deduplication.
 
 #### Functions
 - `_init(owner)`: Binds orchestrator instance.
 - `cleanup_unique_properties()`: Scans `theme_parts` dictionary and merges/deduplicates properties sharing the same base name.
 - `update_property_types()`: Populates the Property Type dropdown (`Color`, `Constant`, `Font`, `Font Size`, `Icon`, `StyleBox`) based on selected Control class defaults.
 - `update_property_names()`: Queries `ThemeDB.get_default_theme()` for available default property names for the chosen Control class and category.
-- `update_value_input_control()`: Dynamically instantiates appropriate input control (`ColorPickerButton`, `SpinBox`, `EditorResourcePicker`) in the value container based on property type.
+- `update_value_input_control()`: Dynamically instantiates appropriate input control (`ColorPickerButton`, `SpinBox`, `EditorResourcePicker`) in the value container based on property type and existing dictionary entry.
 - `on_new_override_pressed()`: Clears active selection and resets input controls for creating a new property override.
 - `on_duplicate_override_pressed()`: Duplicates selected tree item with a copy suffix.
 - `on_delete_override_pressed()`: Removes selected override entry from `theme_parts` data structure and updates tree/preview.
@@ -98,7 +100,7 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 - `refresh_parts_tree()`: Rebuilds tree hierarchy representing configured theme overrides grouped by Control type.
 - `on_tree_item_selected()`: Syncs input fields and dropdowns when a user clicks an entry in the Tree view.
 - `on_override_name_changed(new_text)`: Updates entry ID/alias when text is modified in line edit.
-- `on_color_picker_changed(color)`, `on_spin_box_changed(value)`, `on_resource_picker_changed(res)`: Event callbacks updating entry value when user alters input control.
+- `on_color_picker_changed(color)`, `on_spin_box_changed(value)`, `on_resource_picker_changed(res)`: Event callbacks updating entry value when user alters input control; defaults empty override IDs to file basenames.
 - `on_prop_type_selected(index)`, `on_prop_name_selected(index)`: Event callbacks when user alters Property Type or Property Name dropdowns.
 - `on_erp_resource_changed(res)`, `on_erp_resource_selected(res, inspect)`: Handles resource selection and opens resource in Inspector if in editor.
 
@@ -118,14 +120,14 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 ### 5. `Scripts/ThemePreview.gd`
 **Location:** [ThemePreview.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/ThemePreview.gd)  
 **Inherits:** `RefCounted` (`@tool`)  
-**Responsibility:** Live preview grid generation, control state node instantiation, Figma metadata size lookups, inner design body resolution, state visual freezing, and double-click inline text editing.
+**Responsibility:** Live preview grid generation, Control type family grouping by Engine Base Class, control state node instantiation, Figma metadata size lookups, inner design body resolution, state visual freezing, and double-click inline text editing.
 
 #### Functions
 - `_init(owner)`: Binds orchestrator instance.
 - `get_configured_states(ctrl_type) -> Array[String]`: Inspects configured properties for a control type and returns array of active state names (`normal`, `disabled`, `pressed`, `read_only`, `focus`).
 - `instantiate_class_by_name(p_class) -> Control`: Safely instantiates standard engine Control class or custom global script class.
 - `setup_preview_node(inst, display_name, theme_ref)`: Prepares label/text fields, fits content, and applies font size overrides.
-- `apply_preview()`: Builds native theme, clears preview grid, instantiates section containers and sub-grids for each Control type, sets state flags, freezes visual appearances for state preview nodes, applies metadata dimensions, and connects double-click handlers.
+- `apply_preview()`: Builds native theme, clears preview grid, groups configured control types by their **Base Engine Class** (e.g. `BUTTON CONTROLS (6 Variations)`), places the base class first, renders custom variations alphabetically inside family groups, sets state flags, freezes visual appearances, applies metadata dimensions, and connects double-click handlers.
 - `on_preview_item_gui_input(event, inst)`: Listens for double-click mouse input on preview controls and spawns inline `LineEdit` overlay to customize sample text.
 - `load_stylebox_uncached(val_path: String) -> StyleBox`: Loads a `StyleBox` resource and its underlying `Texture2D` image asset using `ResourceLoader.CACHE_MODE_REPLACE`, forcing Godot to invalidate memory caches and read fresh asset dimensions directly from disk without requiring a project restart.
 - `_resolve_svg_key(record, val_path) -> String`: Resolves target SVG filename from stylebox record or resource path.
@@ -154,15 +156,18 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 ### 7. `Scripts/StyleboxBuilder.gd`
 **Location:** [StyleboxBuilder.gd](file:///d:/Anomaly%20Aces%20Files/Anomaly%20Aces%20Projects/Godot%20Plugins/Anomaly-Aces-Theme-Generator/addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/Scripts/StyleboxBuilder.gd)  
 **Inherits:** `RefCounted` (`@tool`)  
-**Responsibility:** Parses Figma metadata to generate `StyleBoxFlat` (with corner radii, neon borders, and drop shadows) or `StyleBoxTexture` (with background fill SVG injection, padding expansion, and filter cleanup). Manages metadata build UI controls.
+**Responsibility:** Parses Figma metadata to generate `StyleBoxFlat` (with corner radii, neon borders, and drop shadows), `StyleBoxTexture` (with background fill SVG injection and expand margins), or procedural `Texture2D` icons (rendering solid background fills, `INNER_SHADOW` metallic edge shading, and `DROP_SHADOW` subtle outer falloff). Auto-assigns built resources to `ResourcePicker` UI.
 
 #### Functions
 - `_init(owner)`: Binds orchestrator instance.
+- `create_procedural_icon_texture(entry, effects, svg_key) -> ImageTexture`: Procedurally renders vector shapes into in-memory `Texture2D` icons, parsing solid background fills, `INNER_SHADOW` 3D inner edge shading, and `DROP_SHADOW` outer falloff (power exponent `2.2`, alpha multiplier `0.45`).
+- `_assign_built_resource_to_value_input(loaded_res, save_path)`: Auto-assigns generated `.tres` resources or procedural icon textures directly to `ResourcePicker` UI and calls `update_value_input_control()` to refresh the view immediately.
 - `on_metadata_build_check_toggled(pressed)`: Displays/hides SVG selection dropdown and build controls.
 - `refresh_metadata_dropdown()`: Scans metadata JSON keys for `.svg` entries and populates the OptionButton.
 - `ensure_metadata_controls()`: Dynamically injects metadata build UI controls into the property grid if missing.
-- `on_build_stylebox_pressed(dropdown)`: Opens file dialog asking user where to save generated `StyleBox` resource `.tres`.
-- `_on_stylebox_save_path_selected(save_path, svg_key, dialog)`: Main generation handler; parses metadata entry, evaluates drop shadow presence and shape type, calls flat or texture builder, saves `.tres` file, and assigns it to property editor.
+- `on_build_stylebox_pressed(dropdown)`: Opens file dialog asking user where to save generated resource `.tres`.
+- `_on_icon_save_path_selected(save_path, svg_key, dialog)`: Main icon generation handler; parses metadata entry and effects, creates procedural `ImageTexture`, saves resource, and auto-assigns it to the Property Value picker.
+- `_on_stylebox_save_path_selected(save_path, svg_key, dialog)`: Main stylebox generation handler; parses metadata entry, evaluates drop shadow presence and shape type, calls flat or texture builder, saves `.tres` file, and assigns it to property editor.
 - `_build_stylebox_flat(entry, shadow_effect, svg_key) -> StyleBoxFlat`: Generates procedural `StyleBoxFlat` with corner radius, border width, neon color, and shadow parameters parsed from Figma metadata.
 - `_build_stylebox_texture(entry, svg_key) -> StyleBoxTexture`: Generates `StyleBoxTexture`, injects solid background fills directly into SVG `<rect>`, cleans unsupported SVG filters, reimports texture, and applies expand margins.
 - `_find_solid_fill(fills) -> Variant`: Utility function extracting solid fill dict from Figma metadata fills array.

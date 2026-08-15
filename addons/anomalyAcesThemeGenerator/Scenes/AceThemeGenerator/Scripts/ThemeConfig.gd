@@ -40,7 +40,8 @@ func save_config() -> void:
 		"preview_columns": _owner.preview_columns,
 		"preview_item_width": _owner.preview_item_width,
 		"preview_font_size": _owner.preview_font_size,
-		"preview_texts": _owner.preview_texts
+		"preview_texts": _owner.preview_texts,
+		"settings_split_ratio": _owner.settings_split_ratio
 	}
 	var file = FileAccess.open(_owner.CONFIG_FILE_PATH, FileAccess.WRITE)
 	if file:
@@ -88,6 +89,7 @@ func load_config() -> void:
 					_owner.preview_item_width = int(data.get("preview_item_width", 200))
 					_owner.preview_font_size = int(data.get("preview_font_size", 16))
 					_owner.preview_texts = data.get("preview_texts", {})
+					_owner.settings_split_ratio = float(data.get("settings_split_ratio", 0.5))
 			else:
 				printerr("Failed to parse config.json: ", json.get_error_message(), " at line ", json.get_error_line())
 

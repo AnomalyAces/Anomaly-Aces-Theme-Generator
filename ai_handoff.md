@@ -42,14 +42,23 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 * Automatically strips copy-suffixes (like `normal_copy` -> `normal`) from unique properties.
 * Keeps the active copy during editing but automatically prunes stale/inactive duplicate override keys on configuration load/save.
 
-### E. Metadata-Based StyleBox Builder (Opt-In Checkbox)
+### E. Metadata-Based StyleBox & Icon Builder (Opt-In Checkbox)
 * Added a `"Build from Metadata"` checkbox dynamically positioned right under the `"Property Type"` dropdown in the Parts Builder.
-* Visible only for `StyleBox` property types. When opted-in, displays a dropdown containing SVG elements from `metadata.json` and a `"Build..."` compilation button.
-* Overwriting safety guards prevent accidental data loss if opt-in is unchecked.
+* Visible for both `StyleBox` and `Icon` property types.
+* **Procedural `Texture2D` Multi-Effect Generation**: `create_procedural_icon_texture()` parses both `DROP_SHADOW` and `INNER_SHADOW` effects from Figma `metadata.json` (such as `Red_Slider_Knob.svg`). It renders solid background fills, inner metallic 3D edge shading (`INNER_SHADOW`), and glowing drop shadow falloff (`DROP_SHADOW`) directly into an in-memory `Texture2D` resource file, bypassing ThorVG completely!
 
 ### F. Self-Contained Theme Packaging & Preview Scene Export
 * Compiling a theme automatically packages the theme file along with all referenced styleboxes, SVG textures, `.import` configuration files, and custom fonts into relative subfolders inside the output directory (`ResourceFiles/`, `Images/`, `Fonts/`). All internal `res://` paths are rewritten in-place.
 * Automatically exports a self-contained `theme_preview.tscn` styled with your packaged theme, ready to be opened in Godot or loaded in the default Theme Editor preview pane.
+
+### G. Control Type Family Grouping in Theme Previewer
+* The Theme Previewer (`ThemePreview.gd`) groups all configured control types by their **Base Engine Class** (e.g. `BUTTON CONTROLS (6 Variations)`, `HSLIDER CONTROLS (1 Variation)`).
+* The base class (if configured) is rendered first, followed by all custom variations (`HSliderRed`, `BackButton`, `ForwardButton`, etc.) sorted alphabetically inside the family group.
+
+### H. Fully Resizable Settings Panel & View Presets
+* Removed hardcoded `split_offset` overrides from `AceThemeGenerator.gd`, allowing `HSplitContainer` to be dragged freely across the full 0% – 100% width of the editor screen.
+* **Unconstrained Responsive Layout**: Replaced rigid single-row `HBoxContainer` button bars (`PartsButtonBox`, `ActionBox`) with 2-column `GridContainer` layouts and converted `PreviewHeaderBox` to `HFlowContainer`. This reduced minimum width constraints from ~1,400px down to ~400px, enabling the Settings Panel to expand freely to 50%, 80%, 90%+, or 100% of the view!
+* Added `set_settings_panel_view_ratio(ratio: float)` along with a clean, compact `OptionButton` dropdown (`Settings Size: ▼`) in the Live Preview Header bar right above the live preview area with options: `20% Settings (80% Preview)`, `50% Split`, `80% Settings (20% Preview)`, and `100% Full Settings`. All inner grid fields, line edits, option buttons, and tree view columns scale dynamically and persist in `config.json`.
 
 ---
 

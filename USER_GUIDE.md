@@ -103,9 +103,18 @@ The generator can automatically craft Godot `StyleBox` resources using Figma des
 
 ### 3. Providing Icons to the Theme Generator (Slider Grabbers, CheckBoxes, Arrows)
 
-For `Icon` properties (such as `HSlider` -> `grabber`, `grabber_highlight`, `grabber_disabled`, `CheckBox` -> `checked`, or `OptionButton` -> `arrow`):
+For `Icon` properties (such as `HSlider` -> `grabber`, `grabber_highlight`, `grabber_disabled`, `CheckBox` -> `checked`, or `OptionButton` -> `arrow`), you can provide icons using **either of two methods**:
 
+#### Method A: Procedural Metadata Building (Recommended for Knobs with Drop Shadows)
 1. Select **Icon** as the **Property Type** in the Parts Builder (e.g. Control = `HSlider`, Property = `grabber`).
+2. Check **Build from Metadata**.
+3. Select your SVG (e.g. `Red_Slider_Knob_Pressed.svg`) from the **Metadata SVG** dropdown.
+4. Click **Build...**.
+5. Choose where to save the generated `.tres` Texture2D resource (inside `ResourceFiles/`).
+6. The generator creates a native `Texture2D` resource in memory with solid background fills, circular corner radii, and glowing drop shadows directly from your `metadata.json` properties, saves the `.tres` file, and automatically assigns & commits the resource to your active property override!
+
+#### Method B: File Resource Picker
+1. Select **Icon** as the **Property Type** in the Parts Builder.
 2. In the **Value** Resource Picker control, click **Quick Load** (or **Load**).
 3. Select your `.svg` or `.png` texture file directly from your project's `Images/` folder (e.g. `res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/Red_Slider_Knob.svg`).
 4. Click **Add/Update Override**.
