@@ -41,7 +41,7 @@ func build_theme() -> Theme:
 				var base_name = _owner.get_base_prop_name(font_name)
 				var font_path = _owner.get_part_value(section["fonts"][font_name])
 				if font_path != "" and ResourceLoader.exists(font_path):
-					var loaded_font = ResourceLoader.load(font_path)
+					var loaded_font = ResourceLoader.load(font_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 					if loaded_font is Font:
 						temp_theme.set_font(base_name, ctrl_type, loaded_font)
 
@@ -58,7 +58,7 @@ func build_theme() -> Theme:
 				var base_name = _owner.get_base_prop_name(icon_name)
 				var icon_path = _owner.get_part_value(section["icons"][icon_name])
 				if icon_path != "" and ResourceLoader.exists(icon_path):
-					var loaded_icon = ResourceLoader.load(icon_path)
+					var loaded_icon = ResourceLoader.load(icon_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 					if loaded_icon is Texture2D:
 						temp_theme.set_icon(base_name, ctrl_type, loaded_icon)
 
@@ -68,7 +68,7 @@ func build_theme() -> Theme:
 				var base_name = _owner.get_base_prop_name(sb_name)
 				var sb_path = _owner.get_part_value(section["styleboxes"][sb_name])
 				if sb_path != "" and ResourceLoader.exists(sb_path):
-					var loaded_sb = ResourceLoader.load(sb_path)
+					var loaded_sb = _owner._preview.load_stylebox_uncached(sb_path)
 					if loaded_sb is StyleBox:
 						temp_theme.set_stylebox(base_name, ctrl_type, loaded_sb)
 

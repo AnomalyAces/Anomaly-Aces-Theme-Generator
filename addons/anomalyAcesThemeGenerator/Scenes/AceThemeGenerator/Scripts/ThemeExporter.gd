@@ -378,7 +378,7 @@ func _export_preview_scene(target_dir: String, packaged_theme_path: String) -> v
 						if record != null:
 							val_path = str(_owner.get_part_value(record))
 							if val_path != "" and ResourceLoader.exists(val_path):
-								var sb = ResourceLoader.load(val_path)
+								var sb = _owner._preview.load_stylebox_uncached(val_path)
 								if sb is StyleBox:
 									active_stylebox = sb
 							

@@ -22,6 +22,7 @@
 		"ForwardButton_disabled": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
+		"HSlider_normal": "",
 		"IncreaseButton_disabled": "",
 		"IncreaseButton_normal": "",
 		"IncreaseButton_pressed": "",
@@ -29,6 +30,8 @@
 		"LineEdit_read_only": "",
 		"MaleButton_normal": "",
 		"MaleButton_pressed": "",
+		"RedHSlider_normal": "",
+		"RedHslider_normal": "",
 		"ToggleGenderFemaleButton_normal": "",
 		"ToggleGenderFemaleButton_pressed": "",
 		"ToggleGenderMaleButton_normal": "",
@@ -136,6 +139,22 @@
 				"pressed": {
 					"id": "forward_button_pressed",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_pressed.tres"
+				}
+			}
+		},
+		"HSlider": {
+			"styleboxes": {
+				"grabber_area": {
+					"id": "slider_bar_area",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_Fill_stylebox.tres"
+				},
+				"grabber_area_highlight": {
+					"id": "slider_bar_area_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_Fill_stylebox.tres"
+				},
+				"slider": {
+					"id": "slider_bar",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_stylebox.tres"
 				}
 			}
 		},

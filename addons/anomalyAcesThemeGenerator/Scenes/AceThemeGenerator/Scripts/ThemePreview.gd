@@ -114,11 +114,27 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 		var item2 = inst.create_item(root)
 		item2.set_text(0, "Sample Tree Item 2")
 
+# Load StyleBox resource with full cache invalidation for both the stylebox and its underlying texture
+func load_stylebox_uncached(val_path: String) -> StyleBox:
+	if val_path == "" or not ResourceLoader.exists(val_path):
+		return null
+		
+	var sb = ResourceLoader.load(val_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+	if sb is StyleBoxTexture:
+		var tex_sb = sb as StyleBoxTexture
+		if tex_sb.texture and tex_sb.texture.resource_path != "":
+			var tex_path = tex_sb.texture.resource_path
+			if ResourceLoader.exists(tex_path):
+				var fresh_tex = ResourceLoader.load(tex_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+				if fresh_tex:
+					tex_sb.texture = fresh_tex
+	return sb
+
 # Resolve the SVG key from a stylebox record for metadata dimension lookup
 func _resolve_svg_key(record, val_path: String) -> String:
 	var svg_key = ""
 	if val_path is String and val_path != "" and ResourceLoader.exists(val_path):
-		var sb = ResourceLoader.load(val_path)
+		var sb = load_stylebox_uncached(val_path)
 		if sb is StyleBoxTexture and sb.texture:
 			svg_key = sb.texture.resource_path.get_file()
 	
@@ -259,9 +275,7 @@ func _find_common_design_size(ctrl_type: String, states: Array[String], metadata
 			
 			if rec != null:
 				var val_path = _owner.get_part_value(rec)
-				var sb = null
-				if val_path is String and val_path != "" and ResourceLoader.exists(val_path):
-					sb = ResourceLoader.load(val_path)
+				var sb = load_stylebox_uncached(str(val_path))
 				var dims = resolve_design_dimensions(sb, rec, str(val_path), metadata)
 				if dims.x >= 20.0 and dims.y >= 20.0:
 					return dims
@@ -404,7 +418,7 @@ func apply_preview() -> void:
 							if record != null:
 								val_path = str(_owner.get_part_value(record))
 								if val_path != "" and ResourceLoader.exists(val_path):
-									var sb = ResourceLoader.load(val_path)
+									var sb = load_stylebox_uncached(val_path)
 									if sb is StyleBox:
 										active_stylebox = sb
 										

@@ -101,6 +101,17 @@ The generator can automatically craft Godot `StyleBox` resources using Figma des
 
 ---
 
+### 3. Providing Icons to the Theme Generator (Slider Grabbers, CheckBoxes, Arrows)
+
+For `Icon` properties (such as `HSlider` -> `grabber`, `grabber_highlight`, `grabber_disabled`, `CheckBox` -> `checked`, or `OptionButton` -> `arrow`):
+
+1. Select **Icon** as the **Property Type** in the Parts Builder (e.g. Control = `HSlider`, Property = `grabber`).
+2. In the **Value** Resource Picker control, click **Quick Load** (or **Load**).
+3. Select your `.svg` or `.png` texture file directly from your project's `Images/` folder (e.g. `res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/Red_Slider_Knob.svg`).
+4. Click **Add/Update Override**.
+
+---
+
 ### 3. Managing Theme Parts & Overrides
 
 To add or modify individual theme overrides (e.g., setting a button's font color or panel stylebox):

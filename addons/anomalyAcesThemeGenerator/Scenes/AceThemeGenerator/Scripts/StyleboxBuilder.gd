@@ -112,14 +112,21 @@ func ensure_metadata_controls() -> void:
 		_owner.metadata_build_btn.pressed.connect(on_build_stylebox_pressed.bind(_owner.metadata_dropdown))
 
 func on_build_stylebox_pressed(dropdown: OptionButton) -> void:
-	if dropdown.selected == -1:
-		printerr("No SVG file selected in metadata dropdown.")
+	if not dropdown or dropdown.selected == -1:
+		_owner._dialog_utils.show_warning_dialog("Please select an SVG element from metadata first.")
 		return
 	
 	var svg_key = dropdown.get_item_text(dropdown.selected)
-	var base_svg_name = svg_key.replace(".svg", "")
-	var default_filename = base_svg_name + "_stylebox.tres"
-	var default_dir = "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles"
+	var current_prop = ""
+	if _owner.prop_name_option and _owner.prop_name_option.selected != -1:
+		current_prop = _owner.prop_name_option.get_item_text(_owner.prop_name_option.selected)
+		
+	var default_filename = current_prop.to_lower() + "_stylebox.tres"
+	if current_prop == "":
+		default_filename = svg_key.replace(".svg", "").to_lower() + "_stylebox.tres"
+		
+	var output_dir = _owner.output_file.get_base_dir() if _owner.output_file != "" else "res://addons/anomalyAcesThemeGenerator/working"
+	var default_dir = output_dir.path_join("ResourceFiles")
 	var default_path = default_dir.path_join(default_filename)
 	
 	# Make sure default directory exists
@@ -317,7 +324,7 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 	var tex_h = 60.0
 	var temp_tex = null
 	if ResourceLoader.exists(svg_path):
-		temp_tex = ResourceLoader.load(svg_path)
+		temp_tex = ResourceLoader.load(svg_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 		if temp_tex:
 			var size = temp_tex.get_size()
 			tex_w = size.x
@@ -408,7 +415,7 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 	
 	var tex = null
 	if ResourceLoader.exists(svg_path):
-		tex = ResourceLoader.load(svg_path)
+		tex = ResourceLoader.load(svg_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 		if tex:
 			tex_sb.texture = tex
 	

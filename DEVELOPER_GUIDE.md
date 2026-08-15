@@ -127,6 +127,7 @@ addons/anomalyAcesThemeGenerator/Scenes/AceThemeGenerator/
 - `setup_preview_node(inst, display_name, theme_ref)`: Prepares label/text fields, fits content, and applies font size overrides.
 - `apply_preview()`: Builds native theme, clears preview grid, instantiates section containers and sub-grids for each Control type, sets state flags, freezes visual appearances for state preview nodes, applies metadata dimensions, and connects double-click handlers.
 - `on_preview_item_gui_input(event, inst)`: Listens for double-click mouse input on preview controls and spawns inline `LineEdit` overlay to customize sample text.
+- `load_stylebox_uncached(val_path: String) -> StyleBox`: Loads a `StyleBox` resource and its underlying `Texture2D` image asset using `ResourceLoader.CACHE_MODE_REPLACE`, forcing Godot to invalidate memory caches and read fresh asset dimensions directly from disk without requiring a project restart.
 - `_resolve_svg_key(record, val_path) -> String`: Resolves target SVG filename from stylebox record or resource path.
 - `_lookup_metadata_dimensions(svg_key, metadata) -> Vector2`: Extracts width/height from metadata JSON for a given SVG key with fuzzy suffix stripping and word matching.
 - `resolve_design_dimensions(active_stylebox, record, val_path, metadata) -> Vector2`: Resolves true inner component body dimensions (subtracting expand margins for `StyleBoxTexture`) with fallbacks to metadata JSON and stylebox minimum sizes.
