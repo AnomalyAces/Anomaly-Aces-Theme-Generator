@@ -60,6 +60,10 @@ The project is a Godot 4.x editor plugin/addon called **Anomaly Aces Theme Gener
 * **Unconstrained Responsive Layout**: Replaced rigid single-row `HBoxContainer` button bars (`PartsButtonBox`, `ActionBox`) with 2-column `GridContainer` layouts and converted `PreviewHeaderBox` to `HFlowContainer`. This reduced minimum width constraints from ~1,400px down to ~400px, enabling the Settings Panel to expand freely to 50%, 80%, 90%+, or 100% of the view!
 * Added `set_settings_panel_view_ratio(ratio: float)` along with a clean, compact `OptionButton` dropdown (`Settings Size: ▼`) in the Live Preview Header bar right above the live preview area with options: `20% Settings (80% Preview)`, `50% Split`, `80% Settings (20% Preview)`, and `100% Full Settings`. All inner grid fields, line edits, option buttons, and tree view columns scale dynamically and persist in `config.json`.
 
+### I. Relative Path Re-Basing on Theme Import & Complete Font Packaging
+* **Font Asset Packaging**: `ThemeExporter.gd` scans `_owner.fonts_folder` directly to ensure all font assets (`.woff2`, `.ttf`, `.otf`) are copied into `target_dir/Fonts/` during theme compilation and packaging.
+* **Automatic Relative Path Re-Basing**: Updated `import_config_from_file()` in `ThemeConfig.gd` to automatically detect the root directory of imported `config.json` files and re-base all `fonts_folder`, `image_folder`, `metadata_file`, `output_file`, and `theme_parts` resource paths to be relative to the imported theme root directory (`root_dir/Fonts/`, `root_dir/ResourceFiles/`, `root_dir/Images/`), fixing missing resource errors when importing theme packages.
+
 ---
 
 ## 3. Key Godot 4.x Constraints & Gotchas

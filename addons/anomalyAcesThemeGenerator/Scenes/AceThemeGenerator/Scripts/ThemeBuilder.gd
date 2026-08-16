@@ -72,4 +72,17 @@ func build_theme() -> Theme:
 					if loaded_sb is StyleBox:
 						temp_theme.set_stylebox(base_name, ctrl_type, loaded_sb)
 
+	# In-memory alignment pass for slider grabber areas to match slider track margins
+	for ctrl_type in _owner.theme_parts.keys():
+		if temp_theme.has_stylebox("slider", ctrl_type):
+			var slider_sb = temp_theme.get_stylebox("slider", ctrl_type)
+			for fill_name in ["grabber_area", "grabber_area_highlight"]:
+				if temp_theme.has_stylebox(fill_name, ctrl_type):
+					var fill_sb = temp_theme.get_stylebox(fill_name, ctrl_type)
+					if (slider_sb is StyleBoxTexture or slider_sb is StyleBoxFlat) and (fill_sb is StyleBoxTexture or fill_sb is StyleBoxFlat):
+						fill_sb.expand_margin_left = slider_sb.expand_margin_left
+						fill_sb.expand_margin_right = slider_sb.expand_margin_right
+						fill_sb.expand_margin_top = slider_sb.expand_margin_top
+						fill_sb.expand_margin_bottom = slider_sb.expand_margin_bottom
+
 	return temp_theme

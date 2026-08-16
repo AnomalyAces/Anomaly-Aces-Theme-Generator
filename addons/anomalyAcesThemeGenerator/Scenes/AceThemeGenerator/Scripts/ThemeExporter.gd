@@ -16,6 +16,8 @@ func on_compile_pressed() -> void:
 
 	_owner._config.ensure_dir_exists(out_path.get_base_dir())
 
+	_align_slider_margins_on_disk()
+
 	var theme = _owner._builder.build_theme()
 	var err = ResourceSaver.save(theme, out_path)
 	if err == OK:
@@ -156,6 +158,20 @@ func export_theme_package(target_dir: String) -> void:
 						var new_icon_path = target_img_dir.path_join(icon_filename)
 						files_to_copy[source_icon_path] = new_icon_path
 						path_replacements[old_icon_path] = new_icon_path
+
+	# Also scan fonts_folder directly to copy all font assets (woff2, ttf, otf) to target package
+	if DirAccess.dir_exists_absolute(_owner.fonts_folder):
+		var font_dir_access = DirAccess.open(_owner.fonts_folder)
+		if font_dir_access:
+			font_dir_access.list_dir_begin()
+			var fn = font_dir_access.get_next()
+			while fn != "":
+				if not font_dir_access.current_is_dir() and not fn.ends_with(".import"):
+					var src_p = _owner.fonts_folder.path_join(fn)
+					var dst_p = target_font_dir.path_join(fn)
+					files_to_copy[src_p] = dst_p
+					path_replacements[src_p] = dst_p
+				fn = font_dir_access.get_next()
 
 	# Copy files to target package
 	var copy_errors: Array[String] = []
@@ -423,3 +439,42 @@ func _set_owner_recursive(node: Node, owner_node: Node) -> void:
 	for child in node.get_children():
 		child.owner = owner_node
 		_set_owner_recursive(child, owner_node)
+
+func _align_slider_margins_on_disk() -> void:
+	for ctrl_type in _owner.theme_parts.keys():
+		var section = _owner.theme_parts[ctrl_type]
+		if not section.has("styleboxes"):
+			continue
+			
+		var sboxes = section["styleboxes"]
+		# Find the slider (track) stylebox path
+		var slider_path = ""
+		for sb_name in sboxes.keys():
+			if _owner.get_base_prop_name(sb_name) == "slider":
+				slider_path = str(_owner.get_part_value(sboxes[sb_name]))
+				break
+				
+		if slider_path == "" or not FileAccess.file_exists(slider_path):
+			continue
+			
+		# Load the slider stylebox to get its expand margins
+		var slider_sb = ResourceLoader.load(slider_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+		if not slider_sb is StyleBoxTexture and not slider_sb is StyleBoxFlat:
+			continue
+			
+		# Now look for grabber_area and grabber_area_highlight
+		for sb_name in sboxes.keys():
+			var base_name = _owner.get_base_prop_name(sb_name)
+			if base_name == "grabber_area" or base_name == "grabber_area_highlight":
+				var fill_path = str(_owner.get_part_value(sboxes[sb_name]))
+				if fill_path != "" and FileAccess.file_exists(fill_path):
+					var fill_sb = ResourceLoader.load(fill_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+					if fill_sb is StyleBoxTexture or fill_sb is StyleBoxFlat:
+						# Copy expand margins
+						fill_sb.expand_margin_left = slider_sb.expand_margin_left
+						fill_sb.expand_margin_right = slider_sb.expand_margin_right
+						fill_sb.expand_margin_top = slider_sb.expand_margin_top
+						fill_sb.expand_margin_bottom = slider_sb.expand_margin_bottom
+						# Save it back to disk!
+						ResourceSaver.save(fill_sb, fill_path)
+						print("Aligned HSlider margins on disk for: ", fill_path)

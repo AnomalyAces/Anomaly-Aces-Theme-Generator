@@ -175,18 +175,34 @@ func import_config_from_file(file_path: String) -> void:
 		return
 		
 	print("Importing configuration from: ", file_path)
+	var root_dir = file_path.get_base_dir()
 	
-	# Load variables
-	_owner.image_folder = data.get("image_folder", "")
-	_owner.fonts_folder = data.get("fonts_folder", "")
-	_owner.metadata_file = data.get("metadata_file", "")
-	_owner.output_file = data.get("output_file", "")
-	_owner.theme_parts = data.get("theme_parts", {})
+	# Automatically re-base folder paths to be relative to the imported config's root folder
+	var raw_img_folder = data.get("image_folder", "")
+	var raw_fonts_folder = data.get("fonts_folder", "")
+	var raw_meta_file = data.get("metadata_file", "")
+	var raw_output_file = data.get("output_file", "")
+	
+	_owner.image_folder = root_dir.path_join("Images") if DirAccess.dir_exists_absolute(root_dir.path_join("Images")) else (raw_img_folder if raw_img_folder != "" else root_dir.path_join("Images"))
+	_owner.fonts_folder = root_dir.path_join("Fonts") if DirAccess.dir_exists_absolute(root_dir.path_join("Fonts")) else (raw_fonts_folder if raw_fonts_folder != "" else root_dir.path_join("Fonts"))
+	
+	var meta_filename = raw_meta_file.get_file() if raw_meta_file != "" else "metadata.json"
+	var meta_in_root = root_dir.path_join("Metadata").path_join(meta_filename)
+	_owner.metadata_file = meta_in_root if FileAccess.file_exists(meta_in_root) else raw_meta_file
+	
+	var out_filename = raw_output_file.get_file() if raw_output_file != "" else root_dir.get_file() + ".tres"
+	_owner.output_file = root_dir.path_join(out_filename)
+	
+	# Load and re-base theme_parts dictionary relative to the imported theme root directory
+	var raw_parts = data.get("theme_parts", {})
+	_owner.theme_parts = _rebase_theme_parts_paths(raw_parts, root_dir)
 	_owner.theme_variations = data.get("theme_variations", {})
 	_owner.preview_columns = int(data.get("preview_columns", 3))
 	_owner.preview_item_width = int(data.get("preview_item_width", 200))
 	_owner.preview_font_size = int(data.get("preview_font_size", 16))
 	_owner.preview_texts = data.get("preview_texts", {})
+	if data.has("settings_split_ratio"):
+		_owner.settings_split_ratio = float(data.get("settings_split_ratio", 0.5))
 	
 	# Update UI inputs
 	if _owner.images_edit:
@@ -208,11 +224,53 @@ func import_config_from_file(file_path: String) -> void:
 	# Save this configuration to our active local config file so it persists
 	save_config()
 	
+	if Engine.is_editor_hint():
+		EditorInterface.get_resource_filesystem().scan()
+	
 	# Refresh Parts Builder Tree and Preview Grid
 	_owner._parts_manager.refresh_parts_tree()
 	_owner._preview.apply_preview()
 	
 	print("Imported theme configuration successfully.")
+
+func _rebase_theme_parts_paths(raw_parts: Dictionary, root_dir: String) -> Dictionary:
+	var rebased: Dictionary = {}
+	for ctrl_type in raw_parts.keys():
+		rebased[ctrl_type] = {}
+		var sec_dict = raw_parts[ctrl_type]
+		if sec_dict is Dictionary:
+			for sec_name in sec_dict.keys():
+				rebased[ctrl_type][sec_name] = {}
+				var prop_dict = sec_dict[sec_name]
+				if prop_dict is Dictionary:
+					for prop_key in prop_dict.keys():
+						var item = prop_dict[prop_key]
+						if item is Dictionary and item.has("value"):
+							var val = item["value"]
+							if val is String and val.begins_with("res://"):
+								var filename = val.get_file()
+								var subfolder = ""
+								if val.contains("/ResourceFiles/") or sec_name == "styleboxes":
+									subfolder = "ResourceFiles"
+								elif val.contains("/Fonts/") or sec_name == "fonts":
+									subfolder = "Fonts"
+								elif val.contains("/Images/") or sec_name == "icons":
+									subfolder = "Images"
+									
+								if subfolder != "":
+									var candidate = root_dir.path_join(subfolder).path_join(filename)
+									if FileAccess.file_exists(candidate):
+										val = candidate
+									else:
+										var alt_candidate = root_dir.path_join(filename)
+										if FileAccess.file_exists(alt_candidate):
+											val = alt_candidate
+							var new_item = item.duplicate(true)
+							new_item["value"] = val
+							rebased[ctrl_type][sec_name][prop_key] = new_item
+						else:
+							rebased[ctrl_type][sec_name][prop_key] = item
+	return rebased
 
 func on_import_config_pressed() -> void:
 	if Engine.is_editor_hint():

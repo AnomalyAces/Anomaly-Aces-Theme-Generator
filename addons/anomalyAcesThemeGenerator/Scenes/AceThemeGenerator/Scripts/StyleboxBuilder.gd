@@ -505,6 +505,17 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 	var pad_x = max(0.0, (tex_w - design_w) / 2.0)
 	var pad_y = max(0.0, (tex_h - design_h) / 2.0)
 	
+	# Extract drop shadow offset to compensate for asymmetric SVG padding
+	var ox = 0.0
+	var oy = 0.0
+	var effects = entry.get("effects", [])
+	for effect in effects:
+		if effect is Dictionary and effect.get("type") == "DROP_SHADOW" and effect.get("visible", false):
+			var offset_dict = effect.get("offset", {})
+			ox = float(offset_dict.get("x", 0.0))
+			oy = float(offset_dict.get("y", 0.0))
+			break
+			
 	# Inject designed solid background color fills programmatically directly into the SVG
 	var fills = entry.get("fills", [])
 	if fills.is_empty():
@@ -543,7 +554,9 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 				if r_result:
 					rx = float(r_result.get_string(1))
 					
-				var rect_svg = '<rect id="figma_bg_inject" x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" fill-opacity="%f"/>' % [pad_x, pad_y, design_w, design_h, rx, rx, fill_color_hex, fill_opacity]
+				var bg_x = pad_x - ox
+				var bg_y = pad_y - oy
+				var rect_svg = '<rect id="figma_bg_inject" x="%f" y="%f" width="%f" height="%f" rx="%f" ry="%f" fill="%s" fill-opacity="%f"/>' % [bg_x, bg_y, design_w, design_h, rx, rx, fill_color_hex, fill_opacity]
 				
 				var svg_tag_end = svg_text.find(">", svg_text.find("<svg"))
 				if svg_tag_end != -1:
@@ -590,12 +603,19 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 			tex_sb.texture = tex
 	
 	# Apply expand margins to draw the shadow padding glow outside the button boundaries
-	if pad_x > 0.0:
-		tex_sb.expand_margin_left = pad_x
-		tex_sb.expand_margin_right = pad_x
-	if pad_y > 0.0:
-		tex_sb.expand_margin_top = pad_y
-		tex_sb.expand_margin_bottom = pad_y
+	var expand_l = max(0.0, pad_x - ox)
+	var expand_r = max(0.0, pad_x + ox)
+	var expand_t = max(0.0, pad_y - oy)
+	var expand_b = max(0.0, pad_y + oy)
+	
+	if expand_l > 0.0:
+		tex_sb.expand_margin_left = expand_l
+	if expand_r > 0.0:
+		tex_sb.expand_margin_right = expand_r
+	if expand_t > 0.0:
+		tex_sb.expand_margin_top = expand_t
+	if expand_b > 0.0:
+		tex_sb.expand_margin_bottom = expand_b
 		
 	# Set content margins to Godot default buttons margins (L=6, R=6, T=4, B=4)
 	tex_sb.content_margin_left = 6.0
