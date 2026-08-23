@@ -28,8 +28,6 @@ grow_vertical = 2
 
 [node name="HSplit" type="HSplitContainer" parent="MainPanel" unique_id=1898090547]
 layout_mode = 2
-split_offsets = PackedInt32Array(-192)
-split_offset = -192
 
 [node name="LeftScroll" type="ScrollContainer" parent="MainPanel/HSplit" unique_id=725154814]
 layout_mode = 2
@@ -43,14 +41,16 @@ theme_override_constants/separation = 15
 
 [node name="TitleLabel" type="Label" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1276942304]
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 28
 text = "Anomaly Aces Theme Generator"
 
 [node name="SettingsPanel" type="PanelContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=52220792]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="SettingsVBox" type="VBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel" unique_id=1625676567]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="SettingsHeaderBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/SettingsPanel/SettingsVBox" unique_id=494290401]
@@ -247,9 +247,11 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PartsButtonBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1555587863]
+[node name="PartsButtonBox" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent" unique_id=1555587863]
 layout_mode = 2
-theme_override_constants/separation = 10
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 
 [node name="NewOverrideBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/PartsBuilderPanel/VBox/PartsBuilderContent/PartsButtonBox" unique_id=1980696425]
 unique_name_in_owner = true
@@ -288,9 +290,11 @@ columns = 4
 column_titles_visible = true
 hide_root = true
 
-[node name="ActionBox" type="HBoxContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1294328254]
+[node name="ActionBox" type="GridContainer" parent="MainPanel/HSplit/LeftScroll/LeftBox" unique_id=1294328254]
 layout_mode = 2
-theme_override_constants/separation = 10
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 
 [node name="ApplyPreviewBtn" type="Button" parent="MainPanel/HSplit/LeftScroll/LeftBox/ActionBox" unique_id=451977411]
 unique_name_in_owner = true
@@ -308,14 +312,22 @@ text = "Generate Godot Theme"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PreviewHeaderBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1739919011]
+[node name="PreviewHeaderBox" type="HFlowContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1739919011]
 layout_mode = 2
 
 [node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=835492427]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 20
 text = "Live Theme Preview (Panel Container)"
+
+[node name="SettingsViewLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942307]
+layout_mode = 2
+text = "Settings Size:"
+
+[node name="SettingsViewOption" type="OptionButton" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942308]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="ColumnsLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650074]
 layout_mode = 2

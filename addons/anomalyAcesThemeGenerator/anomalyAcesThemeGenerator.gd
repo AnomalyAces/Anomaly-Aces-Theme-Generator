@@ -18,8 +18,8 @@ func _enter_tree() -> void:
 		theme_generator_instance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		theme_generator_instance.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		theme_generator_instance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		theme_generator_instance.theme = get_editor_interface().get_base_control().theme
-		main_screen.add_child(theme_generator_instance)
+		theme_generator_instance.theme = EditorInterface.get_base_control().theme
+		EditorInterface.get_editor_main_screen().add_child(theme_generator_instance)
 		_make_visible(false)
 		print("Ace Theme Generator plugin initialized.")
 
@@ -35,12 +35,10 @@ func _make_visible(visible: bool) -> void:
 	if is_instance_valid(theme_generator_instance) and not theme_generator_instance.is_queued_for_deletion():
 		theme_generator_instance.visible = visible
 		if visible:
-			get_editor_interface().inspect_object(theme_generator_instance)
+			EditorInterface.inspect_object(theme_generator_instance)
 
 func _get_plugin_name() -> String:
 	return "Theme Gen"
 
 func _get_plugin_icon() -> Texture2D:
-	return get_editor_interface().get_base_control().get_theme_icon("Theme", "EditorIcons")
-
-
+	return EditorInterface.get_base_control().get_theme_icon("Theme", "EditorIcons")

@@ -4,7 +4,11 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO.tres",
 	"preview_columns": 6,
+<<<<<<< HEAD
 	"preview_font_size": 16,
+=======
+	"preview_font_size": 20,
+>>>>>>> 2f2a3c1a60cd017b3b157e5cacff3431d3e5312e
 	"preview_item_width": 0,
 	"preview_texts": {
 		"BackButton_disabled": "",
@@ -22,11 +26,23 @@
 		"ForwardButton_disabled": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
+		"HSliderBGreen_normal": "",
+		"HSliderBlue_normal": "",
+		"HSliderRed_normal": "",
+		"HSlider_normal": "",
 		"IncreaseButton_disabled": "",
 		"IncreaseButton_normal": "",
 		"IncreaseButton_pressed": "",
 		"LineEdit_normal": "",
-		"LineEdit_read_only": ""
+		"LineEdit_read_only": "",
+		"MaleButton_normal": "",
+		"MaleButton_pressed": "",
+		"RedHSlider_normal": "",
+		"RedHslider_normal": "",
+		"ToggleGenderFemaleButton_normal": "",
+		"ToggleGenderFemaleButton_pressed": "",
+		"ToggleGenderMaleButton_normal": "",
+		"ToggleGenderMaleButton_pressed": ""
 	},
 	"theme_parts": {
 		"BackButton": {
@@ -133,6 +149,70 @@
 				}
 			}
 		},
+		"HSlider": {
+			"constants": {
+				"center_grabber": {
+					"id": "center_grabber",
+					"value": 1.0
+				}
+			},
+			"styleboxes": {
+				"grabber_area": {
+					"id": "slider_bar_area",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_Fill_stylebox.tres"
+				},
+				"grabber_area_highlight": {
+					"id": "slider_bar_area_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_Fill_stylebox.tres"
+				},
+				"slider": {
+					"id": "slider_bar",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Slider_Bar_stylebox.tres"
+				}
+			}
+		},
+		"HSliderBGreen": {
+			"icons": {
+				"grabber": {
+					"id": "green_slider_icon_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/green_grabber_icon.tres"
+				},
+				"grabber_highlight": {
+					"id": "green_slider_icon_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/green_grabber_highlight_icon.tres"
+				}
+			}
+		},
+		"HSliderBlue": {
+			"icons": {
+				"grabber": {
+					"id": "blue_slider_icon_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/blue_grabber_icon.tres"
+				},
+				"grabber_highlight": {
+					"id": "blue_slider_icon_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/blue_grabber_highlight_icon.tres"
+				}
+			}
+		},
+		"HSliderRed": {
+			"constants": {
+				"center_grabber": {
+					"id": "center_grabber",
+					"value": 1.0
+				}
+			},
+			"icons": {
+				"grabber": {
+					"id": "red_slider_icon_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_icon.tres"
+				},
+				"grabber_highlight": {
+					"id": "red_slider_icon_highlight",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_highlight_icon.tres"
+				}
+			}
+		},
 		"IncreaseButton": {
 			"styleboxes": {
 				"disabled": {
@@ -204,6 +284,38 @@
 					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/test_panel_stylebox.tres"
 				}
 			}
+		},
+		"ToggleGenderFemaleButton": {
+			"styleboxes": {
+				"hover": {
+					"id": "toggle_gender_female_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Pressed_stylebox.tres"
+				},
+				"normal": {
+					"id": "toggle_gender_female_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Regular_stylebox.tres"
+				},
+				"pressed": {
+					"id": "toggle_gender_female_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Female_Pressed_stylebox.tres"
+				}
+			}
+		},
+		"ToggleGenderMaleButton": {
+			"styleboxes": {
+				"hover": {
+					"id": "toggle_gender_male_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Pressed_stylebox.tres"
+				},
+				"normal": {
+					"id": "toggle_gender_male_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Regular_stylebox.tres"
+				},
+				"pressed": {
+					"id": "toggle_gender_male_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/ResourceFiles/Gender_Toggle_-_Male_Pressed_stylebox.tres"
+				}
+			}
 		}
 	},
 	"theme_variations": {
@@ -212,8 +324,14 @@
 		"ColorSelectionPanel": "Panel",
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
+		"GenderToggleMaleButton": "Button",
+		"HSliderBGreen": "HSlider",
+		"HSliderBlue": "HSlider",
+		"HSliderRed": "HSlider",
 		"IncreaseButton": "Button",
 		"LineEditError": "LineEdit",
-		"LineEditErrorLabel": "Label"
+		"LineEditErrorLabel": "Label",
+		"ToggleGenderFemaleButton": "Button",
+		"ToggleGenderMaleButton": "Button"
 	}
 }
