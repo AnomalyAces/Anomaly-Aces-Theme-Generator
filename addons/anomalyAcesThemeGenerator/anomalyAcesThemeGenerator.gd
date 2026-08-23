@@ -6,11 +6,20 @@ var theme_generator_instance: Control
 
 func _enter_tree() -> void:
 	if Engine.is_editor_hint():
+		var main_screen = get_editor_interface().get_editor_main_screen()
+		if main_screen:
+			for child in main_screen.get_children():
+				if child.name == "AceThemeGenerator":
+					main_screen.remove_child(child)
+					child.queue_free()
+
 		theme_generator_instance = ThemeGeneratorScene.instantiate()
+		theme_generator_instance.name = "AceThemeGenerator"
 		theme_generator_instance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		theme_generator_instance.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		theme_generator_instance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		theme_generator_instance.theme = get_editor_interface().get_base_control().theme
-		get_editor_interface().get_editor_main_screen().add_child(theme_generator_instance)
+		main_screen.add_child(theme_generator_instance)
 		_make_visible(false)
 		print("Ace Theme Generator plugin initialized.")
 
