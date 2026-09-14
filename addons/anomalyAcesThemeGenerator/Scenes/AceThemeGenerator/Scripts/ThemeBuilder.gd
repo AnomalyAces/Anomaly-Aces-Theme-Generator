@@ -85,4 +85,32 @@ func build_theme() -> Theme:
 						fill_sb.expand_margin_top = slider_sb.expand_margin_top
 						fill_sb.expand_margin_bottom = slider_sb.expand_margin_bottom
 
+	# Keep every button state anchored to the normal state's geometry.
+	_align_button_state_margins(temp_theme)
+
 	return temp_theme
+
+func _align_button_state_margins(theme: Theme) -> void:
+	for ctrl_type in _owner.theme_parts.keys():
+		if not theme.has_stylebox("normal", ctrl_type):
+			continue
+
+		var normal_sb = theme.get_stylebox("normal", ctrl_type)
+		if not normal_sb is StyleBox:
+			continue
+
+		for state in ["hover", "pressed", "disabled"]:
+			if not theme.has_stylebox(state, ctrl_type):
+				continue
+			var state_sb = theme.get_stylebox(state, ctrl_type)
+			if not state_sb is StyleBox:
+				continue
+
+			state_sb.content_margin_left = normal_sb.content_margin_left
+			state_sb.content_margin_top = normal_sb.content_margin_top
+			state_sb.content_margin_right = normal_sb.content_margin_right
+			state_sb.content_margin_bottom = normal_sb.content_margin_bottom
+			state_sb.expand_margin_left = normal_sb.expand_margin_left
+			state_sb.expand_margin_top = normal_sb.expand_margin_top
+			state_sb.expand_margin_right = normal_sb.expand_margin_right
+			state_sb.expand_margin_bottom = normal_sb.expand_margin_bottom

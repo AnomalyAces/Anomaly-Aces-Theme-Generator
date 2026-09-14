@@ -17,6 +17,7 @@ func on_compile_pressed() -> void:
 	_owner._config.ensure_dir_exists(out_path.get_base_dir())
 
 	_align_slider_margins_on_disk()
+	_align_button_state_margins_on_disk()
 
 	var theme = _owner._builder.build_theme()
 	var err = ResourceSaver.save(theme, out_path)
@@ -410,7 +411,10 @@ func _export_preview_scene(target_dir: String, packaged_theme_path: String) -> v
 							design_width = tex_sz.x
 							design_height = tex_sz.y
 					
-					if design_width < 20.0 and common_size.x >= 20.0:
+					if inst is Button and common_size.x >= 20.0 and common_size.y >= 20.0:
+						design_width = common_size.x
+						design_height = common_size.y
+					elif design_width < 20.0 and common_size.x >= 20.0:
 						design_width = common_size.x
 						design_height = common_size.y
 						
@@ -478,3 +482,41 @@ func _align_slider_margins_on_disk() -> void:
 						# Save it back to disk!
 						ResourceSaver.save(fill_sb, fill_path)
 						print("Aligned HSlider margins on disk for: ", fill_path)
+
+func _align_button_state_margins_on_disk() -> void:
+	for ctrl_type in _owner.theme_parts.keys():
+		var section = _owner.theme_parts[ctrl_type]
+		if not section.has("styleboxes"):
+			continue
+
+		var paths: Dictionary = {}
+		for sb_name in section["styleboxes"].keys():
+			var base_name = _owner.get_base_prop_name(sb_name)
+			if base_name in ["normal", "hover", "pressed", "disabled"]:
+				paths[base_name] = str(_owner.get_part_value(section["styleboxes"][sb_name]))
+
+		if not paths.has("normal") or not FileAccess.file_exists(paths["normal"]):
+			continue
+
+		var normal_sb = ResourceLoader.load(paths["normal"], "", ResourceLoader.CACHE_MODE_REPLACE)
+		if not normal_sb is StyleBox:
+			continue
+
+		for state in ["hover", "pressed", "disabled"]:
+			if not paths.has(state) or not FileAccess.file_exists(paths[state]):
+				continue
+			var state_sb = ResourceLoader.load(paths[state], "", ResourceLoader.CACHE_MODE_REPLACE)
+			if not state_sb is StyleBox:
+				continue
+
+			state_sb.content_margin_left = normal_sb.content_margin_left
+			state_sb.content_margin_top = normal_sb.content_margin_top
+			state_sb.content_margin_right = normal_sb.content_margin_right
+			state_sb.content_margin_bottom = normal_sb.content_margin_bottom
+			state_sb.expand_margin_left = normal_sb.expand_margin_left
+			state_sb.expand_margin_top = normal_sb.expand_margin_top
+			state_sb.expand_margin_right = normal_sb.expand_margin_right
+			state_sb.expand_margin_bottom = normal_sb.expand_margin_bottom
+			var save_err = ResourceSaver.save(state_sb, paths[state])
+			if save_err == OK:
+				print("Aligned button state margins on disk for: ", paths[state])

@@ -503,7 +503,10 @@ func apply_preview() -> void:
 									design_width = tex_sz.x
 									design_height = tex_sz.y
 							
-							if design_width < 20.0 and common_size.x >= 20.0:
+							if inst is Button and common_size.x >= 20.0 and common_size.y >= 20.0:
+								design_width = common_size.x
+								design_height = common_size.y
+							elif design_width < 20.0 and common_size.x >= 20.0:
 								design_width = common_size.x
 								design_height = common_size.y
 
