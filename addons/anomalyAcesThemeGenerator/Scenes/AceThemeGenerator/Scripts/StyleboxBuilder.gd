@@ -400,14 +400,15 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 	# Build programmatically styled StyleBoxFlat
 	var flat_sb = StyleBoxFlat.new()
 	
-	# Set border/corner radius (try to extract from SVG rect rx first, fall back to capsule corner)
+	# Load SVG content to extract stroke, stroke-width, rx, and circle geometry
 	var h = entry.get("height", 60.0)
 	var radius = -1
 	var svg_path = _owner.image_folder.path_join(svg_key)
+	var svg_content = ""
 	if FileAccess.file_exists(svg_path):
 		var file = FileAccess.open(svg_path, FileAccess.READ)
 		if file:
-			var svg_content = file.get_as_text()
+			svg_content = file.get_as_text()
 			file.close()
 			
 			var regex = RegEx.new()
@@ -415,6 +416,12 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 			var result = regex.search(svg_content)
 			if result:
 				radius = int(float(result.get_string(1)))
+			else:
+				var circle_regex = RegEx.new()
+				circle_regex.compile("<circle[^>]+r=\"([0-9.]+)\"")
+				var circle_result = circle_regex.search(svg_content)
+				if circle_result:
+					radius = int(float(circle_result.get_string(1)))
 				
 	if radius < 0:
 		radius = int(float(h) / 2.0)
@@ -427,7 +434,7 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 	# Enable corner details so the capsule looks perfect/smooth
 	flat_sb.corner_detail = 12
 	
-	# Background color & Border width/color:
+	# Extract shadow color from Figma effect
 	var shadow_col_dict = shadow_effect.get("color", {})
 	var r = float(shadow_col_dict.get("r", 0.0))
 	var g = float(shadow_col_dict.get("g", 0.0))
@@ -435,14 +442,38 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 	var a = float(shadow_col_dict.get("a", 1.0))
 	var neon_color = Color(r, g, b, a)
 	
+	# Parse stroke color & border width directly from the SVG if available
+	# Ensures white lines (or custom strokes) are preserved and never covered by the glow
+	var stroke_color = neon_color
+	var border_width = 2
+	if svg_content != "":
+		var stroke_regex = RegEx.new()
+		stroke_regex.compile("stroke=\"([^\"]+)\"")
+		var stroke_match = stroke_regex.search(svg_content)
+		if stroke_match:
+			var s_val = stroke_match.get_string(1).strip_edges()
+			if s_val != "" and s_val.to_lower() != "none":
+				stroke_color = Color.from_string(s_val, neon_color)
+				
+		var sw_regex = RegEx.new()
+		sw_regex.compile("stroke-width=\"([0-9.]+)")
+		var sw_match = sw_regex.search(svg_content)
+		if sw_match:
+			border_width = int(round(float(sw_match.get_string(1))))
+			
+	# Border width & color
+	flat_sb.border_width_left = border_width
+	flat_sb.border_width_top = border_width
+	flat_sb.border_width_right = border_width
+	flat_sb.border_width_bottom = border_width
+	flat_sb.border_color = stroke_color
+	
 	# Background color from Figma fills or childFills:
-	var fill_color = Color(0.08, 0.08, 0.1, 0.6) # Fallback bg_color
 	var fills = entry.get("fills", [])
 	if fills.is_empty():
 		fills = entry.get("childFills", [])
 		
 	var solid_fill = _find_solid_fill(fills)
-		
 	if solid_fill != null:
 		var fill_col_dict = solid_fill.get("color", {})
 		var fr = float(fill_col_dict.get("r", 0.0))
@@ -450,16 +481,14 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 		var fb = float(fill_col_dict.get("b", 0.0))
 		var fopacity = float(solid_fill.get("opacity", 1.0))
 		var fa = float(fill_col_dict.get("a", fopacity))
-		fill_color = Color(fr, fg, fb, fa)
-	
-	flat_sb.bg_color = fill_color
-	
-	# Border width
-	flat_sb.border_width_left = 2
-	flat_sb.border_width_top = 2
-	flat_sb.border_width_right = 2
-	flat_sb.border_width_bottom = 2
-	flat_sb.border_color = neon_color
+		flat_sb.bg_color = Color(fr, fg, fb, fa)
+	else:
+		var name_lower = svg_key.to_lower()
+		if fills.is_empty() and (name_lower.contains("color") or name_lower.contains("selection") or "<circle" in svg_content):
+			flat_sb.bg_color = Color(0, 0, 0, 0)
+			flat_sb.draw_center = false
+		else:
+			flat_sb.bg_color = Color(0.08, 0.08, 0.1, 0.6) # Fallback bg_color
 	
 	# Shadow parameters from Figma:
 	var offset_dict = shadow_effect.get("offset", {})
@@ -468,12 +497,14 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 	flat_sb.shadow_offset = Vector2(ox, oy)
 	
 	var shadow_radius = float(shadow_effect.get("radius", 40.0))
-	# Scale down Figma's blur radius by 0.25 to translate it to a clean Godot shadow size
-	flat_sb.shadow_size = int(shadow_radius * 0.25)
+	var shadow_spread = float(shadow_effect.get("spread", 0.0))
 	
-	# Dynamically calculate shadow opacity scale based on Figma blur radius (wider blur = softer start density)
-	var shadow_alpha_scale = clamp(12.0 / shadow_radius, 0.15, 1.0) if shadow_radius > 0.0 else 1.0
-	flat_sb.shadow_color = Color(r, g, b, a * shadow_alpha_scale)
+	# Vibrant, bright neon shadow calculation
+	flat_sb.shadow_size = int(round((shadow_radius + shadow_spread) * 0.42))
+	if flat_sb.shadow_size < 12:
+		flat_sb.shadow_size = int(shadow_radius * 0.25)
+	var shadow_alpha = clamp(a * 0.9, 0.7, 1.0)
+	flat_sb.shadow_color = Color(r, g, b, shadow_alpha)
 	
 	# Set content margins to Godot default buttons margins (L=6, R=6, T=4, B=4)
 	flat_sb.content_margin_left = 6.0

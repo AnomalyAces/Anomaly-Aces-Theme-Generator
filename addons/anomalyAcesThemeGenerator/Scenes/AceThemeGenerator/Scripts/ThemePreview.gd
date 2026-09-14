@@ -145,7 +145,7 @@ func _resolve_svg_key(record, val_path: String) -> String:
 			svg_key = record_id + ".svg"
 	
 	if svg_key == "" and val_path is String and val_path != "":
-		var filename = val_path.get_file().replace("_stylebox.tres", "")
+		var filename = val_path.get_file().get_basename().replace("_stylebox", "")
 		filename = _owner.get_base_prop_name(filename)
 		svg_key = filename + ".svg"
 	
@@ -190,14 +190,14 @@ func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary) -> Vecto
 			var meta_entry = metadata[m_key]
 			return Vector2(float(meta_entry.get("width", 0.0)), float(meta_entry.get("height", 0.0)))
 
-	# 4. Word-component match (e.g. "pressed_button" -> "Button_-_Pressed.svg")
+	# 4. Word-component match (e.g. "pressed_button" -> "Button_-_Pressed.svg", "color_selection_button_hover" -> "Color_Selection_-_Hover.svg")
 	var clean_words = lower_key.replace("-", "_").replace(" ", "_").split("_", false)
 	if clean_words.size() > 0:
 		for m_key in metadata.keys():
 			var m_lower = m_key.to_lower().replace("-", "_").replace(" ", "_").replace(".svg", "")
 			var all_match = true
 			for w in clean_words:
-				if not w in ["stylebox", "tres", "copy"] and not w in m_lower:
+				if not w in ["stylebox", "tres", "copy", "button", "panel"] and not w in m_lower:
 					all_match = false
 					break
 			if all_match:
