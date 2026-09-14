@@ -376,7 +376,8 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 			is_icon_or_custom_shape = true
 			break
 			
-	if shadow_effect != null and not is_icon_or_custom_shape:
+	var is_button_style = name_lower.contains("button") and not is_icon_or_custom_shape
+	if (shadow_effect != null or is_button_style) and not is_icon_or_custom_shape:
 		new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
 	else:
 		new_stylebox = _build_stylebox_texture(entry, svg_key)
@@ -396,7 +397,7 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 	else:
 		printerr("Failed to save StyleBox resource: ", err)
 
-func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key: String) -> StyleBoxFlat:
+func _build_stylebox_flat(entry: Dictionary, shadow_effect: Variant, svg_key: String) -> StyleBoxFlat:
 	# Build programmatically styled StyleBoxFlat
 	var flat_sb = StyleBoxFlat.new()
 	
@@ -435,7 +436,9 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 	flat_sb.corner_detail = 12
 	
 	# Extract shadow color from Figma effect
-	var shadow_col_dict = shadow_effect.get("color", {})
+	var shadow_col_dict: Dictionary = {}
+	if shadow_effect is Dictionary:
+		shadow_col_dict = shadow_effect.get("color", {})
 	var r = float(shadow_col_dict.get("r", 0.0))
 	var g = float(shadow_col_dict.get("g", 0.0))
 	var b = float(shadow_col_dict.get("b", 0.0))
@@ -482,6 +485,9 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 		var fopacity = float(solid_fill.get("opacity", 1.0))
 		var fa = float(fill_col_dict.get("a", fopacity))
 		flat_sb.bg_color = Color(fr, fg, fb, fa)
+	elif svg_key.to_lower().contains("button"):
+		flat_sb.bg_color = Color(0, 0, 0, 0)
+		flat_sb.draw_center = false
 	else:
 		var name_lower = svg_key.to_lower()
 		if fills.is_empty() and (name_lower.contains("color") or name_lower.contains("selection") or "<circle" in svg_content):
@@ -491,20 +497,28 @@ func _build_stylebox_flat(entry: Dictionary, shadow_effect: Dictionary, svg_key:
 			flat_sb.bg_color = Color(0.08, 0.08, 0.1, 0.6) # Fallback bg_color
 	
 	# Shadow parameters from Figma:
-	var offset_dict = shadow_effect.get("offset", {})
+	var offset_dict: Dictionary = {}
+	if shadow_effect is Dictionary:
+		offset_dict = shadow_effect.get("offset", {})
 	var ox = float(offset_dict.get("x", 0.0))
 	var oy = float(offset_dict.get("y", 0.0))
 	flat_sb.shadow_offset = Vector2(ox, oy)
 	
-	var shadow_radius = float(shadow_effect.get("radius", 40.0))
-	var shadow_spread = float(shadow_effect.get("spread", 0.0))
+	var shadow_radius = 0.0
+	var shadow_spread = 0.0
+	if shadow_effect is Dictionary:
+		shadow_radius = float(shadow_effect.get("radius", 40.0))
+		shadow_spread = float(shadow_effect.get("spread", 0.0))
 	
 	# Vibrant, bright neon shadow calculation
 	flat_sb.shadow_size = int(round((shadow_radius + shadow_spread) * 0.42))
-	if flat_sb.shadow_size < 12:
+	if shadow_effect == null:
+		flat_sb.shadow_size = 0
+	if shadow_effect != null and flat_sb.shadow_size < 12:
 		flat_sb.shadow_size = int(shadow_radius * 0.25)
-	var shadow_alpha = clamp(a * 0.9, 0.7, 1.0)
-	flat_sb.shadow_color = Color(r, g, b, shadow_alpha)
+	if shadow_effect != null:
+		var shadow_alpha = clamp(a * 0.9, 0.7, 1.0)
+		flat_sb.shadow_color = Color(r, g, b, shadow_alpha)
 	
 	# Set content margins to Godot default buttons margins (L=6, R=6, T=4, B=4)
 	flat_sb.content_margin_left = 6.0
