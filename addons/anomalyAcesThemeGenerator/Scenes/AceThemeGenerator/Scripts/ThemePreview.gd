@@ -26,12 +26,14 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 			var base_name = _owner.get_base_prop_name(sb_name).to_lower()
 			if "disabled" in base_name:
 				if not states.has("disabled"): states.append("disabled")
-			elif "pressed" in base_name:
+			elif "pressed" in base_name or (("selected" in base_name) and not ("unselected" in base_name)):
 				if not states.has("pressed"): states.append("pressed")
 			elif "read_only" in base_name:
 				if not states.has("read_only"): states.append("read_only")
 			elif "focus" in base_name:
 				if not states.has("focus"): states.append("focus")
+			elif "hover" in base_name:
+				if not states.has("hover"): states.append("hover")
 			else:
 				has_normal_configs = true
 	else:
@@ -44,12 +46,14 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 					continue
 				if "disabled" in base_name:
 					if not states.has("disabled"): states.append("disabled")
-				elif "pressed" in base_name:
+				elif "pressed" in base_name or (("selected" in base_name) and not ("unselected" in base_name)):
 					if not states.has("pressed"): states.append("pressed")
 				elif "read_only" in base_name:
 					if not states.has("read_only"): states.append("read_only")
 				elif "focus" in base_name:
 					if not states.has("focus"): states.append("focus")
+				elif "hover" in base_name:
+					if not states.has("hover"): states.append("hover")
 				else:
 					has_normal_configs = true
 				
@@ -84,7 +88,7 @@ func instantiate_class_by_name(p_class: String) -> Control:
 	return null
 
 func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = null) -> void:
-	if inst is Panel or inst is PanelContainer or inst is ColorRect or inst is TextureRect or inst is Container or inst is Tree:
+	if inst is Panel or inst is PanelContainer or inst is ColorRect or inst is TextureRect or inst is Container or inst is Tree or inst is TabBar:
 		inst.custom_minimum_size = Vector2(0, 40)
 		
 	var theme_type = inst.theme_type_variation if inst.theme_type_variation != "" else inst.get_class()
@@ -119,6 +123,32 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 		inst.placeholder_text = display_name
 		if not has_theme_size:
 			inst.add_theme_font_size_override("font_size", _owner.preview_font_size)
+	elif inst is TabBar:
+		inst.clip_tabs = false
+		inst.custom_minimum_size = Vector2(0, 40)
+		inst.add_tab("Unselected Tab")
+		inst.add_tab("Selected Tab")
+		inst.add_tab("Disabled Tab")
+		inst.set_tab_disabled(2, true)
+		inst.current_tab = 1 # Tab 1 is Selected; Tab 0 is Unselected!
+		if not has_theme_size:
+			inst.add_theme_font_size_override("font_size", _owner.preview_font_size)
+		if theme_ref != null:
+			var tab_icon = null
+			if theme_ref.has_icon("icon", theme_type):
+				tab_icon = theme_ref.get_icon("icon", theme_type)
+			elif theme_ref.has_icon("icon", inst.get_class()):
+				tab_icon = theme_ref.get_icon("icon", inst.get_class())
+			if tab_icon != null and inst.get_tab_count() > 0:
+				inst.set_tab_icon(0, tab_icon)
+				inst.set_tab_icon(1, tab_icon)
+	elif inst is TabContainer:
+		var c1 = Control.new()
+		c1.name = display_name
+		inst.add_child(c1)
+		var c2 = Control.new()
+		c2.name = "Tab 2"
+		inst.add_child(c2)
 	elif "text" in inst:
 		inst.text = display_name
 		if not has_theme_size:
@@ -335,6 +365,17 @@ func apply_node_preview_sizing(inst: Control, active_stylebox: StyleBox, design_
 	var final_width = design_width
 	var final_height = design_height
 
+	if inst is TabBar:
+		var tab_h = max(40.0, final_height)
+		if item_width > 0:
+			inst.custom_minimum_size = Vector2(item_width, tab_h)
+			inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		else:
+			inst.custom_minimum_size = Vector2(0, tab_h)
+			inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		return
+
 	if item_width > 0:
 		var calc_height = 40.0
 		if final_height > 0.0:
@@ -365,9 +406,9 @@ func _find_common_design_size(ctrl_type: String, states: Array[String], metadata
 	if dims.x >= 20.0 and dims.y >= 20.0:
 		return dims
 
-	for s in states:
-		if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
-			var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
+	if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
+		var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
+		for s in states:
 			var rec = null
 			for key in sboxes.keys():
 				if _owner.get_base_prop_name(key) == s:
@@ -380,6 +421,16 @@ func _find_common_design_size(ctrl_type: String, states: Array[String], metadata
 				var d = resolve_design_dimensions(sb, rec, str(val_path), metadata, ctrl_type)
 				if d.x >= 20.0 and d.y >= 20.0:
 					return d
+
+		# Fallback: check any stylebox in sboxes (e.g. for TabBar with tab_unselected, or Slider with slider)
+		for key in sboxes.keys():
+			var rec = sboxes[key]
+			var val_path = _owner.get_part_value(rec)
+			var sb = load_stylebox_uncached(str(val_path))
+			var d = resolve_design_dimensions(sb, rec, str(val_path), metadata, ctrl_type)
+			if d.x >= 20.0 and d.y >= 20.0:
+				return d
+
 	return Vector2.ZERO
 
 # Build Native Theme Object & Preview it
@@ -567,6 +618,10 @@ func apply_preview() -> void:
 							elif state == "focus":
 								display_name += " (Focus)"
 								
+							if inst is TabBar and state == "disabled":
+								for t_idx in range(inst.get_tab_count()):
+									inst.set_tab_disabled(t_idx, true)
+								
 							var text_key = ctrl_type + "_" + state
 							var item_text = display_name
 							if _owner.preview_texts.has(text_key):
@@ -589,6 +644,26 @@ func apply_preview() -> void:
 										record = sboxes[key]
 										break
 								
+								if record == null:
+									# Fallback matching for controls with non-standard stylebox names (e.g. TabBar, Slider, Panel)
+									for key in sboxes.keys():
+										var base_prop = _owner.get_base_prop_name(key).to_lower()
+										if state == "disabled" and "disabled" in base_prop:
+											record = sboxes[key]
+											break
+										elif state == "pressed" and ("pressed" in base_prop or "selected" in base_prop):
+											record = sboxes[key]
+											break
+										elif state == "hover" and "hover" in base_prop:
+											record = sboxes[key]
+											break
+										elif state == "focus" and "focus" in base_prop:
+											record = sboxes[key]
+											break
+										elif state == "normal" and not ("disabled" in base_prop or "pressed" in base_prop or "hover" in base_prop):
+											record = sboxes[key]
+											break
+
 								if record != null:
 									val_path = str(_owner.get_part_value(record))
 									if val_path != "" and ResourceLoader.exists(val_path):
@@ -607,6 +682,13 @@ func apply_preview() -> void:
 									
 								if temp_theme.has_stylebox(stylebox_prop_name, theme_type):
 									active_stylebox = temp_theme.get_stylebox(stylebox_prop_name, theme_type)
+								elif inst is TabBar:
+									if state == "normal" and temp_theme.has_stylebox("tab_unselected", theme_type):
+										active_stylebox = temp_theme.get_stylebox("tab_unselected", theme_type)
+									elif state == "normal" and temp_theme.has_stylebox("tab_selected", theme_type):
+										active_stylebox = temp_theme.get_stylebox("tab_selected", theme_type)
+									elif state == "disabled" and temp_theme.has_stylebox("tab_disabled", theme_type):
+										active_stylebox = temp_theme.get_stylebox("tab_disabled", theme_type)
 								else:
 									# Fallback to the variation base class in the theme (e.g. Button)
 									var base_type = _owner.theme_variations.get(theme_type, "")

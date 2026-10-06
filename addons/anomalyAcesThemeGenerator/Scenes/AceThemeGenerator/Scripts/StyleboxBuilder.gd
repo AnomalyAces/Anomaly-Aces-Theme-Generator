@@ -396,7 +396,7 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 	# Check if this is an icon, arrow, or toggle which must retain its texture shape
 	var is_icon_or_custom_shape = false
 	var name_lower = svg_key.to_lower()
-	for keyword in ["arrow", "knob", "toggle", "icon", "decrease", "increase", "slider", "subtract", "back", "left", "right", "solo", "challenge", "online", "avatar", "symbol", "card", "gender", "glyph"]:
+	for keyword in ["tab", "arrow", "knob", "toggle", "icon", "decrease", "increase", "slider", "subtract", "back", "left", "right", "solo", "challenge", "online", "avatar", "symbol", "card", "gender", "glyph"]:
 		if keyword in name_lower:
 			is_icon_or_custom_shape = true
 			break
@@ -426,31 +426,32 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 				if (p_count > 0 and r_count > 0) or p_count > 1 or s_txt.contains("<polygon") or s_txt.contains("<clipPath"):
 					is_icon_or_custom_shape = true
 
-	# Check if SVG has both a background container rectangle and vector icon graphics
+	# Check if SVG has both a background container rectangle and vector icon graphics (Buttons only)
 	var has_bg_rect_and_icon = false
-	var svg_temp_p = _owner.image_folder.path_join(svg_key)
-	if FileAccess.file_exists(svg_temp_p):
-		var tf = FileAccess.open(svg_temp_p, FileAccess.READ)
-		if tf:
-			var s_body = tf.get_as_text()
-			tf.close()
-			var p_cnt = s_body.count("<path")
-			var r_cnt = s_body.count("<rect")
-			if r_cnt > 0 and (p_cnt > 0 or s_body.contains("<polygon")):
-				has_bg_rect_and_icon = true
+	if not name_lower.contains("tab"):
+		var svg_temp_p = _owner.image_folder.path_join(svg_key)
+		if FileAccess.file_exists(svg_temp_p):
+			var tf = FileAccess.open(svg_temp_p, FileAccess.READ)
+			if tf:
+				var s_body = tf.get_as_text()
+				tf.close()
+				var p_cnt = s_body.count("<path")
+				var r_cnt = s_body.count("<rect")
+				if r_cnt > 0 and (p_cnt > 0 or s_body.contains("<polygon")):
+					has_bg_rect_and_icon = true
 
 	var is_button_style = name_lower.contains("button") and not is_icon_or_custom_shape
-	if has_bg_rect_and_icon:
+	if has_bg_rect_and_icon and is_button_style:
 		# Method A: Button with Background Container + Icon -> StyleBoxFlat + automatic icon extraction
 		new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
 		_extract_and_assign_button_icon(entry, svg_key, true)
 	elif is_icon_or_custom_shape:
-		if shadow_effect != null:
+		if shadow_effect != null and is_button_style:
 			# Method A: Has Icon + Has Glow -> StyleBoxFlat with glow + automatic icon extraction
 			new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
 			_extract_and_assign_button_icon(entry, svg_key, true)
 		else:
-			# Method B: Has Icon + No Glow (BackButton pattern) -> StyleBoxTexture directly from SVG
+			# Method B: Has Icon + No Glow or Custom Shape (Tabs, BackButton, etc.) -> StyleBoxTexture directly from SVG
 			new_stylebox = _build_stylebox_texture(entry, svg_key)
 	elif shadow_effect != null or is_button_style:
 		new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
@@ -662,8 +663,8 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 			var changed = (cleaned_svg != svg_text)
 			svg_text = cleaned_svg
 			
-			var already_has_filled_rect = svg_text.contains("<rect") and svg_text.contains("fill=")
-			if solid_fill != null and not already_has_filled_rect:
+			var has_existing_fill = (svg_text.contains("<rect") and svg_text.contains("fill=")) or (svg_text.contains("<path") and svg_text.contains("fill=") and not svg_text.contains("fill=\"none\""))
+			if solid_fill != null and not has_existing_fill and not svg_key.to_lower().contains("tab"):
 				var fill_col_dict = solid_fill.get("color", {})
 				var fr = float(fill_col_dict.get("r", 0.0))
 				var fg = float(fill_col_dict.get("g", 0.0))
@@ -826,6 +827,15 @@ func _extract_icon_from_svg(svg_path: String, output_path: String) -> bool:
 	return true
 
 func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String, defer_refresh: bool = false) -> void:
+	if svg_key.to_lower().contains("tab"):
+		return
+		
+	var target_base = _owner.control_type_edit.text.strip_edges()
+	if _owner.theme_variations.has(target_base):
+		target_base = _owner.theme_variations[target_base]
+	if target_base != "" and target_base != "Button" and not _owner.theme_variations.get(_owner.custom_type_name_edit.text.strip_edges(), "") == "Button":
+		return
+		
 	var svg_path = _owner.image_folder.path_join(svg_key)
 	if not FileAccess.file_exists(svg_path):
 		return

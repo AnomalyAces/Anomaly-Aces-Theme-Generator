@@ -75,6 +75,14 @@
 				}
 			}
 		},
+		"BeginningStatsTabBar": {
+			"styleboxes": {
+				"tab_unselected": {
+					"id": "beginning_stats_tab_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/beginning_stats_tab_normal.tres"
+				}
+			}
+		},
 		"Button": {
 			"colors": {
 				"icon_hover_color": {
@@ -438,6 +446,7 @@
 	},
 	"theme_variations": {
 		"BackButton": "Button",
+		"BeginningStatsTabBar": "TabBar",
 		"ColorSelectionButton": "Button",
 		"ColorSelectionPanel": "Panel",
 		"DecreaseButton": "Button",
