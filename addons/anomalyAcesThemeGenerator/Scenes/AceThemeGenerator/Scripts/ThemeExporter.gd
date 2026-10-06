@@ -524,10 +524,6 @@ func _align_button_state_margins_on_disk() -> void:
 			state_sb.content_margin_top = normal_sb.content_margin_top
 			state_sb.content_margin_right = normal_sb.content_margin_right
 			state_sb.content_margin_bottom = normal_sb.content_margin_bottom
-			state_sb.expand_margin_left = normal_sb.expand_margin_left
-			state_sb.expand_margin_top = normal_sb.expand_margin_top
-			state_sb.expand_margin_right = normal_sb.expand_margin_right
-			state_sb.expand_margin_bottom = normal_sb.expand_margin_bottom
 			var save_err = ResourceSaver.save(state_sb, paths[state])
 			if save_err == OK:
 				print("Aligned button state margins on disk for: ", paths[state])

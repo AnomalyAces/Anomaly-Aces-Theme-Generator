@@ -62,6 +62,11 @@ func build_theme() -> Theme:
 					if loaded_icon is Texture2D:
 						temp_theme.set_icon(base_name, ctrl_type, loaded_icon)
 
+			# Ensure button icons maintain untinted pure colors across states unless explicitly configured in colors
+			for ic_prop in ["icon_normal_color", "icon_pressed_color", "icon_hover_color", "icon_hover_pressed_color", "icon_focus_color"]:
+				if not temp_theme.has_color(ic_prop, ctrl_type):
+					temp_theme.set_color(ic_prop, ctrl_type, Color.WHITE)
+
 		# Apply StyleBoxes
 		if section.has("styleboxes"):
 			for sb_name in section["styleboxes"].keys():
@@ -110,7 +115,3 @@ func _align_button_state_margins(theme: Theme) -> void:
 			state_sb.content_margin_top = normal_sb.content_margin_top
 			state_sb.content_margin_right = normal_sb.content_margin_right
 			state_sb.content_margin_bottom = normal_sb.content_margin_bottom
-			state_sb.expand_margin_left = normal_sb.expand_margin_left
-			state_sb.expand_margin_top = normal_sb.expand_margin_top
-			state_sb.expand_margin_right = normal_sb.expand_margin_right
-			state_sb.expand_margin_bottom = normal_sb.expand_margin_bottom

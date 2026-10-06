@@ -36,7 +36,17 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 				has_normal_configs = true
 				
 	if has_normal_configs or states.is_empty():
-		states.insert(0, "normal")
+		if not states.has("normal"):
+			states.insert(0, "normal")
+			
+	var state_order = ["normal", "pressed", "disabled", "focus", "read_only"]
+	states.sort_custom(func(a, b):
+		var ia = state_order.find(a)
+		var ib = state_order.find(b)
+		if ia == -1: ia = 99
+		if ib == -1: ib = 99
+		return ia < ib
+	)
 		
 	return states
 
@@ -95,6 +105,25 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 		inst.text = display_name
 		if not has_theme_size:
 			inst.add_theme_font_size_override("font_size", _owner.preview_font_size)
+		if inst is Button and theme_ref != null:
+			var btn_icon = null
+			if theme_ref.has_icon("icon", theme_type):
+				btn_icon = theme_ref.get_icon("icon", theme_type)
+			elif theme_ref.has_icon("icon", inst.get_class()):
+				btn_icon = theme_ref.get_icon("icon", inst.get_class())
+			if btn_icon != null:
+				inst.icon = btn_icon
+				inst.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				inst.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+				inst.text = ""
+				# Ensure Godot's editor theme does not tint button icon colors
+				for ic_name in ["icon_normal_color", "icon_pressed_color", "icon_hover_color", "icon_hover_pressed_color", "icon_focus_color"]:
+					var c_val = Color.WHITE
+					if theme_ref.has_color(ic_name, theme_type):
+						c_val = theme_ref.get_color(ic_name, theme_type)
+					elif theme_ref.has_color(ic_name, inst.get_class()):
+						c_val = theme_ref.get_color(ic_name, inst.get_class())
+					inst.add_theme_color_override(ic_name, c_val)
 	elif not (inst is Tree):
 		var lbl = Label.new()
 		lbl.text = display_name
@@ -449,8 +478,25 @@ func apply_preview() -> void:
 					# Create the sub-grid for states
 					var sub_grid = GridContainer.new()
 					sub_grid.columns = _owner.preview_columns
-					sub_grid.add_theme_constant_override("h_separation", 15)
-					sub_grid.add_theme_constant_override("v_separation", 15)
+					var base_sep = _owner.preview_separation if ("preview_separation" in _owner and _owner.preview_separation > 0) else 40
+					var h_sep = base_sep
+					var v_sep = base_sep
+					
+					# Detect if any state has a large glow shadow and ensure spacing prevents clipping/overlap
+					if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
+						var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
+						for key in sboxes.keys():
+							var rec = sboxes[key]
+							var val_path = _owner.get_part_value(rec)
+							var sb = load_stylebox_uncached(str(val_path))
+							if sb is StyleBoxFlat and sb.shadow_size > 0:
+								var min_sep = int(sb.shadow_size * 2 + 10)
+								if h_sep < min_sep:
+									h_sep = min_sep
+									v_sep = min_sep
+									
+					sub_grid.add_theme_constant_override("h_separation", h_sep)
+					sub_grid.add_theme_constant_override("v_separation", v_sep)
 					
 					if _owner.preview_item_width > 0:
 						sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -488,6 +534,8 @@ func apply_preview() -> void:
 									inst.toggle_mode = true
 								inst.button_pressed = true
 								display_name += " (Pressed)"
+							elif state == "hover":
+								display_name += " (Hover)"
 							elif state == "read_only":
 								if "editable" in inst:
 									inst.editable = false
@@ -501,6 +549,11 @@ func apply_preview() -> void:
 							var item_text = display_name
 							if _owner.preview_texts.has(text_key):
 								item_text = _owner.preview_texts[text_key]
+							elif state == "hover":
+								if ctrl_type == "Button":
+									item_text = "Hover"
+								elif _owner.preview_texts.has(ctrl_type + "_normal") and _owner.preview_texts[ctrl_type + "_normal"] == "":
+									item_text = ""
 								
 							# Fetch design size from Figma metadata or StyleBox texture/minimum size
 							var design_width = 0.0
@@ -592,6 +645,27 @@ func apply_preview() -> void:
 									var color_val = temp_theme.get_color(active_color_name, theme_type2)
 									for c_name in color_names:
 										inst.add_theme_color_override(c_name, color_val)
+
+								# Also freeze icon colors so pressed/hover/disabled state retains its intended icon color
+								var icon_color_names = ["icon_normal_color", "icon_pressed_color", "icon_hover_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]
+								var active_icon_color_name = "icon_normal_color"
+								if state == "disabled":
+									active_icon_color_name = "icon_disabled_color"
+								elif state == "pressed":
+									active_icon_color_name = "icon_pressed_color"
+								elif state == "hover":
+									active_icon_color_name = "icon_hover_color"
+								
+								var icon_color_val = Color.WHITE
+								if temp_theme.has_color(active_icon_color_name, theme_type2):
+									icon_color_val = temp_theme.get_color(active_icon_color_name, theme_type2)
+								elif temp_theme.has_color("icon_normal_color", theme_type2):
+									icon_color_val = temp_theme.get_color("icon_normal_color", theme_type2)
+								elif temp_theme.has_color(active_icon_color_name, inst.get_class()):
+									icon_color_val = temp_theme.get_color(active_icon_color_name, inst.get_class())
+								
+								for ic_name in icon_color_names:
+									inst.add_theme_color_override(ic_name, icon_color_val)
 							
 							# Apply sizing and shrink centering appropriately with aspect ratio preservation and shadow margin compensation
 							apply_node_preview_sizing(inst, active_stylebox, design_width, design_height, _owner.preview_item_width)
@@ -673,6 +747,8 @@ func on_preview_item_gui_input(event: InputEvent, inst: Control) -> void:
 								default_text += " (Disabled)"
 							elif s_name == "pressed":
 								default_text += " (Pressed)"
+							elif s_name == "hover":
+								default_text += " (Hover)"
 							elif s_name == "read_only":
 								default_text += " (Read Only)"
 							

@@ -68,6 +68,8 @@ var preview_item_width: int = 200
 var preview_item_width_spin: SpinBox
 var preview_font_size: int = 16
 var preview_font_size_spin: SpinBox
+var preview_separation: int = 40
+var preview_separation_spin: SpinBox
 var preview_texts: Dictionary = {}
 var settings_split_ratio: float = 0.5
 var _target_select_meta = null
@@ -247,6 +249,25 @@ func setup_ui() -> void:
 		preview_font_size_spin.custom_minimum_size = Vector2(80, 0)
 		preview_font_size_spin.value_changed.connect(_on_preview_font_size_changed)
 		header_box.add_child(preview_font_size_spin)
+
+		# Add separator
+		var sep3 = Control.new()
+		sep3.custom_minimum_size = Vector2(10, 0)
+		header_box.add_child(sep3)
+
+		var spacing_label = Label.new()
+		spacing_label.text = "Spacing:"
+		header_box.add_child(spacing_label)
+
+		preview_separation_spin = SpinBox.new()
+		preview_separation_spin.name = "PreviewSeparationSpin"
+		preview_separation_spin.min_value = 0
+		preview_separation_spin.max_value = 500
+		preview_separation_spin.step = 5
+		preview_separation_spin.value = preview_separation
+		preview_separation_spin.custom_minimum_size = Vector2(80, 0)
+		preview_separation_spin.value_changed.connect(_on_preview_separation_changed)
+		header_box.add_child(preview_separation_spin)
 		
 	if settings_view_option:
 		settings_view_option.clear()
@@ -294,6 +315,8 @@ func _apply_editor_scaling() -> void:
 		preview_item_width_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 	if preview_font_size_spin:
 		preview_font_size_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
+	if preview_separation_spin:
+		preview_separation_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 
 # --- Signal Handlers (thin pass-throughs) ---
 
@@ -374,6 +397,11 @@ func _on_preview_item_width_changed(value: float) -> void:
 
 func _on_preview_font_size_changed(value: float) -> void:
 	preview_font_size = int(value)
+	_config.save_config()
+	_preview.apply_preview()
+
+func _on_preview_separation_changed(value: float) -> void:
+	preview_separation = int(value)
 	_config.save_config()
 	_preview.apply_preview()
 

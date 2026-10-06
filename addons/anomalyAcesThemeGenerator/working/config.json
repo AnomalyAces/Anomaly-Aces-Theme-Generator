@@ -4,22 +4,28 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
-	"preview_font_size": 20,
+	"preview_font_size": 22,
 	"preview_item_width": 0,
+	"preview_separation": 40,
 	"preview_texts": {
 		"BackButton_disabled": "",
+		"BackButton_hover": "",
 		"BackButton_normal": "",
 		"BackButton_pressed": "",
 		"Button_disabled": "Disabled",
+		"Button_hover": "Hover",
 		"Button_normal": "Button",
 		"Button_pressed": "Pressed",
+		"ColorSelectionButton_hover": "",
 		"ColorSelectionButton_normal": "",
 		"ColorSelectionButton_pressed": "",
 		"ColorSelectionPanel_normal": "",
 		"DecreaseButton_disabled": "",
+		"DecreaseButton_hover": "",
 		"DecreaseButton_normal": "",
 		"DecreaseButton_pressed": "",
 		"ForwardButton_disabled": "",
+		"ForwardButton_hover": "",
 		"ForwardButton_normal": "",
 		"ForwardButton_pressed": "",
 		"HSliderBGreen_normal": "",
@@ -27,6 +33,7 @@
 		"HSliderRed_normal": "",
 		"HSlider_normal": "",
 		"IncreaseButton_disabled": "",
+		"IncreaseButton_hover": "",
 		"IncreaseButton_normal": "",
 		"IncreaseButton_pressed": "",
 		"LineEdit_normal": "",
@@ -35,11 +42,19 @@
 		"MaleButton_pressed": "",
 		"RedHSlider_normal": "",
 		"RedHslider_normal": "",
+		"SoloChallengeButton_disabled": "",
+		"SoloChallengeButton_hover": "",
+		"SoloChallengeButton_icon": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/solo_challenge_icon.svg",
+		"SoloChallengeButton_normal": "",
+		"SoloChallengeButton_pressed": "",
+		"ToggleGenderFemaleButton_hover": "",
 		"ToggleGenderFemaleButton_normal": "",
 		"ToggleGenderFemaleButton_pressed": "",
+		"ToggleGenderMaleButton_hover": "",
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
+	"settings_split_ratio": 0.5,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {
@@ -171,11 +186,11 @@
 			"icons": {
 				"grabber": {
 					"id": "green_slider_icon_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/green_grabber_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/green_grabber_icon.tres"
 				},
 				"grabber_highlight": {
 					"id": "green_slider_icon_highlight",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/green_grabber_highlight_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/green_grabber_highlight_icon.tres"
 				}
 			}
 		},
@@ -183,11 +198,11 @@
 			"icons": {
 				"grabber": {
 					"id": "blue_slider_icon_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/blue_grabber_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/blue_grabber_icon.tres"
 				},
 				"grabber_highlight": {
 					"id": "blue_slider_icon_highlight",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/blue_grabber_highlight_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/blue_grabber_highlight_icon.tres"
 				}
 			}
 		},
@@ -201,11 +216,11 @@
 			"icons": {
 				"grabber": {
 					"id": "red_slider_icon_normal",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/red_grabber_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_icon.tres"
 				},
 				"grabber_highlight": {
 					"id": "red_slider_icon_highlight",
-					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/red_grabber_highlight_icon.tres"
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/red_grabber_highlight_icon.tres"
 				}
 			}
 		},
@@ -281,6 +296,42 @@
 				}
 			}
 		},
+		"SoloChallengeButton": {
+			"colors": {
+				"icon_hover_color": {
+					"id": "solo_challenge_icon_hover_color",
+					"value": "#ffffffff"
+				},
+				"icon_normal_color": {
+					"id": "solo_challenge_icon_normal_color",
+					"value": "#ffffffff"
+				},
+				"icon_pressed_color": {
+					"id": "solo_challenge_icon_pressed_color",
+					"value": "#ffffffff"
+				}
+			},
+			"icons": {
+				"icon": {
+					"id": "solo_challenge_icon",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/solo_challenge_icon.svg"
+				}
+			},
+			"styleboxes": {
+				"hover": {
+					"id": "solo_challange_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_challenge_hover.tres"
+				},
+				"normal": {
+					"id": "solo_challange_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_challenge_normal.tres"
+				},
+				"pressed": {
+					"id": "solo_challange_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_challenge_pressed.tres"
+				}
+			}
+		},
 		"ToggleGenderFemaleButton": {
 			"styleboxes": {
 				"hover": {
@@ -327,6 +378,7 @@
 		"IncreaseButton": "Button",
 		"LineEditError": "LineEdit",
 		"LineEditErrorLabel": "Label",
+		"SoloChallengeButton": "Button",
 		"ToggleGenderFemaleButton": "Button",
 		"ToggleGenderMaleButton": "Button"
 	}

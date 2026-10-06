@@ -371,13 +371,46 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 	# Check if this is an icon, arrow, or toggle which must retain its texture shape
 	var is_icon_or_custom_shape = false
 	var name_lower = svg_key.to_lower()
-	for keyword in ["arrow", "knob", "toggle", "icon", "decrease", "increase", "slider", "subtract", "back", "left", "right"]:
+	for keyword in ["arrow", "knob", "toggle", "icon", "decrease", "increase", "slider", "subtract", "back", "left", "right", "solo", "challenge", "online", "avatar", "symbol", "card", "gender", "glyph"]:
 		if keyword in name_lower:
 			is_icon_or_custom_shape = true
 			break
 			
+	# If not matched by keyword, inspect metadata childFills and SVG content for vector graphics/icons
+	if not is_icon_or_custom_shape:
+		var child_fills = entry.get("childFills", [])
+		if child_fills.size() > 1:
+			is_icon_or_custom_shape = true
+		else:
+			for cf in child_fills:
+				if cf is Dictionary:
+					var n_name = cf.get("nodeName", "").to_lower()
+					if n_name in ["vector", "icon", "glyph", "symbol", "logo", "path", "graphic", "shape"]:
+						is_icon_or_custom_shape = true
+						break
+
+	if not is_icon_or_custom_shape:
+		var svg_p = _owner.image_folder.path_join(svg_key)
+		if FileAccess.file_exists(svg_p):
+			var f = FileAccess.open(svg_p, FileAccess.READ)
+			if f:
+				var s_txt = f.get_as_text()
+				f.close()
+				var p_count = s_txt.count("<path")
+				var r_count = s_txt.count("<rect")
+				if (p_count > 0 and r_count > 0) or p_count > 1 or s_txt.contains("<polygon") or s_txt.contains("<clipPath"):
+					is_icon_or_custom_shape = true
+
 	var is_button_style = name_lower.contains("button") and not is_icon_or_custom_shape
-	if (shadow_effect != null or is_button_style) and not is_icon_or_custom_shape:
+	if is_icon_or_custom_shape:
+		if shadow_effect != null:
+			# Method A: Has Icon + Has Glow -> StyleBoxFlat with glow + automatic icon extraction
+			new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
+			_extract_and_assign_button_icon(entry, svg_key)
+		else:
+			# Method B: Has Icon + No Glow (BackButton pattern) -> StyleBoxTexture directly from SVG
+			new_stylebox = _build_stylebox_texture(entry, svg_key)
+	elif shadow_effect != null or is_button_style:
 		new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
 	else:
 		new_stylebox = _build_stylebox_texture(entry, svg_key)
@@ -583,7 +616,8 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 			var changed = (cleaned_svg != svg_text)
 			svg_text = cleaned_svg
 			
-			if solid_fill != null:
+			var already_has_filled_rect = svg_text.contains("<rect") and svg_text.contains("fill=")
+			if solid_fill != null and not already_has_filled_rect:
 				var fill_col_dict = solid_fill.get("color", {})
 				var fr = float(fill_col_dict.get("r", 0.0))
 				var fg = float(fill_col_dict.get("g", 0.0))
@@ -642,8 +676,19 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 			file_system.reimport_files([svg_path])
 	
 	var tex = null
-	if ResourceLoader.exists(svg_path):
-		tex = ResourceLoader.load(svg_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+	var chosen_path = svg_path
+	var possible_pngs = [
+		svg_path.get_basename() + ".png",
+		svg_path.get_base_dir().path_join(svg_path.get_file().get_basename().replace(" ", "_") + "_Composited.png"),
+		svg_path.get_base_dir().path_join(svg_path.get_file().get_basename() + "_Composited.png")
+	]
+	for p in possible_pngs:
+		if FileAccess.file_exists(p) and ResourceLoader.exists(p):
+			chosen_path = p
+			break
+	
+	if ResourceLoader.exists(chosen_path):
+		tex = ResourceLoader.load(chosen_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 		if tex:
 			tex_sb.texture = tex
 	
@@ -678,3 +723,95 @@ func _find_solid_fill(fills: Array) -> Variant:
 				continue
 			return fill
 	return null
+
+func _extract_icon_from_svg(svg_path: String, output_path: String) -> bool:
+	if not FileAccess.file_exists(svg_path):
+		return false
+	var file = FileAccess.open(svg_path, FileAccess.READ)
+	if not file:
+		return false
+	var svg_text = file.get_as_text()
+	file.close()
+	
+	# 1. Remove <g filter="...">...<rect.../>...</g>
+	var g_filter_rect_regex = RegEx.new()
+	g_filter_rect_regex.compile("<g\\s+filter=[\"'][^\"']*[\"'][^>]*>\\s*<rect[^>]+>\\s*<\\/g>")
+	var cleaned = g_filter_rect_regex.sub(svg_text, "")
+	
+	# 2. Remove standalone background rect
+	var rect_regex = RegEx.new()
+	rect_regex.compile("<rect[^>]+fill=[\"']#(?:[0-9a-fA-F]{3,8})[\"'][^>]*\\/?>")
+	cleaned = rect_regex.sub(cleaned, "")
+	
+	# 3. Remove <defs>...</defs>
+	var defs_regex = RegEx.new()
+	defs_regex.compile("<defs>[\\s\\S]*?<\\/defs>")
+	cleaned = defs_regex.sub(cleaned, "")
+	
+	if not (cleaned.contains("<path") or cleaned.contains("<polygon") or cleaned.contains("<circle")):
+		return false
+		
+	var out_file = FileAccess.open(output_path, FileAccess.WRITE)
+	if not out_file:
+		return false
+	out_file.store_string(cleaned.strip_edges())
+	out_file.close()
+	return true
+
+func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String) -> void:
+	var svg_path = _owner.image_folder.path_join(svg_key)
+	if not FileAccess.file_exists(svg_path):
+		return
+		
+	var base_stem = svg_key.get_basename()
+	for s in ["_-_hover", "_-_regular", "_-_pressed", "_-_disabled", "- hover", "- regular", "- pressed", "- disabled", "_hover", "_regular", "_pressed", "_disabled"]:
+		if base_stem.to_lower().ends_with(s):
+			base_stem = base_stem.substr(0, base_stem.length() - s.length())
+			break
+			
+	var icon_name = base_stem + "_icon.svg"
+	var icon_path = _owner.image_folder.path_join(icon_name)
+	
+	var extracted = _extract_icon_from_svg(svg_path, icon_path)
+	if not extracted:
+		return
+		
+	if Engine.is_editor_hint():
+		var fs = EditorInterface.get_resource_filesystem()
+		if fs:
+			fs.reimport_files([icon_path])
+			
+	var control_type = _owner.control_type_edit.text.strip_edges()
+	if control_type == "":
+		var words = base_stem.replace("-", "_").split("_", false)
+		var pascal_name = ""
+		for w in words:
+			pascal_name += w.capitalize()
+		control_type = pascal_name.replace(" ", "")
+		if not control_type.to_lower().ends_with("button"):
+			control_type += "Button"
+			
+	if not _owner.theme_parts.has(control_type):
+		_owner.theme_parts[control_type] = {}
+	if not _owner.theme_parts[control_type].has("icons"):
+		_owner.theme_parts[control_type]["icons"] = {}
+		
+	_owner.theme_parts[control_type]["icons"]["icon"] = {
+		"id": control_type.to_snake_case() + "_icon",
+		"value": icon_path
+	}
+	
+	if not _owner.theme_variations.has(control_type):
+		_owner.theme_variations[control_type] = "Button"
+
+	if not _owner.theme_parts[control_type].has("colors"):
+		_owner.theme_parts[control_type]["colors"] = {}
+	for ic_name in ["icon_normal_color", "icon_pressed_color", "icon_hover_color"]:
+		if not _owner.theme_parts[control_type]["colors"].has(ic_name):
+			_owner.theme_parts[control_type]["colors"][ic_name] = {
+				"id": control_type.to_snake_case() + "_" + ic_name,
+				"value": "#ffffffff"
+			}
+		
+	_owner._config.save_config()
+	print("Extracted icon and assigned to ", control_type, ".icons.icon: ", icon_path)
