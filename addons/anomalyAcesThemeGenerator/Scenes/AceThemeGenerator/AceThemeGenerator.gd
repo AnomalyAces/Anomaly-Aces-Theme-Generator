@@ -75,6 +75,10 @@ var settings_split_ratio: float = 0.5
 var _target_select_meta = null
 var _active_prop_key: String = ""
 var _creating_new_override: bool = false
+var _loading_from_tree: bool = false
+var status_bar: PanelContainer
+var status_label: Label
+var status_icon: Label
 
 # Metadata stylebox builder controls (positioned right after Custom Name in Grid)
 var metadata_build_check: CheckBox
@@ -145,6 +149,7 @@ func _ready() -> void:
 
 func setup_ui() -> void:
 	print("AceThemeGenerator setup_ui() called.")
+	setup_status_bar()
 	# Connect the Select button to show the Node Picker dialog
 	select_control_type_btn.pressed.connect(_on_select_control_type_pressed)
 
@@ -457,3 +462,77 @@ func _on_h_split_dragged(offset: int) -> void:
 				settings_view_option.selected = 2
 			elif abs(settings_split_ratio - 0.98) < 0.05:
 				settings_view_option.selected = 3
+
+func setup_status_bar() -> void:
+	var right_panel = get_node_or_null("MainPanel/HSplit/RightPanel")
+	if not right_panel:
+		right_panel = find_child("RightPanel", true, false)
+	if not right_panel:
+		right_panel = get_node_or_null("MainPanel/HSplit/LeftScroll/LeftBox")
+	if not right_panel:
+		return
+		
+	status_bar = PanelContainer.new()
+	status_bar.name = "StatusBar"
+	status_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	var sb_style = StyleBoxFlat.new()
+	sb_style.bg_color = Color(0.12, 0.15, 0.20, 0.95)
+	sb_style.border_color = Color(0.2, 0.55, 0.4, 0.7)
+	sb_style.set_border_width_all(1)
+	sb_style.set_corner_radius_all(6)
+	sb_style.content_margin_left = 12
+	sb_style.content_margin_right = 12
+	sb_style.content_margin_top = 6
+	sb_style.content_margin_bottom = 6
+	status_bar.add_theme_stylebox_override("panel", sb_style)
+	
+	var hbox = HBoxContainer.new()
+	hbox.name = "StatusHBox"
+	hbox.add_theme_constant_override("separation", 8)
+	status_bar.add_child(hbox)
+	
+	status_icon = Label.new()
+	status_icon.name = "StatusIcon"
+	status_icon.text = "✓"
+	status_icon.add_theme_color_override("font_color", Color(0.3, 0.85, 0.5))
+	hbox.add_child(status_icon)
+	
+	status_label = Label.new()
+	status_label.name = "StatusLabel"
+	status_label.text = "Ready"
+	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_label.add_theme_color_override("font_color", Color(0.85, 0.90, 0.95))
+	hbox.add_child(status_label)
+	
+	# Add below PreviewArea in RightPanel (always visible)
+	right_panel.add_child(status_bar)
+
+func set_status(text: String, is_loading: bool = false) -> void:
+	if not status_bar or not is_instance_valid(status_bar):
+		return
+		
+	if status_label:
+		status_label.text = text
+		
+	var style = status_bar.get_theme_stylebox("panel") as StyleBoxFlat
+	if is_loading:
+		status_bar.visible = true
+		if status_icon:
+			status_icon.text = "⏳"
+			status_icon.add_theme_color_override("font_color", Color(0.95, 0.75, 0.2))
+		if style:
+			style.border_color = Color(0.95, 0.75, 0.2, 0.9)
+			style.bg_color = Color(0.18, 0.16, 0.10, 0.95)
+		if is_inside_tree():
+			DisplayServer.cursor_set_shape(DisplayServer.CURSOR_BUSY)
+			await get_tree().process_frame
+	else:
+		if status_icon:
+			status_icon.text = "✓"
+			status_icon.add_theme_color_override("font_color", Color(0.3, 0.85, 0.5))
+		if style:
+			style.border_color = Color(0.2, 0.6, 0.35, 0.6)
+			style.bg_color = Color(0.12, 0.15, 0.20, 0.95)
+		if is_inside_tree():
+			DisplayServer.cursor_set_shape(DisplayServer.CURSOR_ARROW)

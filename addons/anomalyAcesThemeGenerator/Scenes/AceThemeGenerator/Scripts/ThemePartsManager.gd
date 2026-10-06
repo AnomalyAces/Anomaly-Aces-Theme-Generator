@@ -176,7 +176,15 @@ func update_property_names() -> void:
 				break
 				
 	if not reselected:
-		_owner.prop_name_option.selected = -1
+		if _owner.prop_name_option.item_count > 0:
+			var default_idx = 0
+			for i in range(_owner.prop_name_option.item_count):
+				if _owner.prop_name_option.get_item_text(i) == "normal":
+					default_idx = i
+					break
+			_owner.prop_name_option.selected = default_idx
+		else:
+			_owner.prop_name_option.selected = -1
 
 	update_value_input_control()
 
@@ -194,7 +202,6 @@ func update_value_input_control() -> void:
 			_owner.metadata_build_check.visible = false
 			_owner.metadata_file_label.visible = false
 			_owner.metadata_builder_box.visible = false
-			_owner.metadata_build_check.button_pressed = false
 		return
 		
 	var prop_type = _owner.prop_type_option.get_item_text(_owner.prop_type_option.selected).to_lower().replace(" ", "_")
@@ -222,12 +229,12 @@ func update_value_input_control() -> void:
 	var raw_val = null
 	if existing_val != null:
 		var ext_id = _owner.get_part_id(existing_val)
-		_owner.override_name_edit.text = ext_id
+		if _owner.override_name_edit.text.strip_edges() == "" or _owner._loading_from_tree:
+			_owner.override_name_edit.text = ext_id
 		raw_val = _owner.get_part_value(existing_val)
 	else:
-		# Preserve the custom override name/ID if creating a new override from scratch
-		if _owner.parts_tree == null or _owner.parts_tree.get_selected() != null:
-			_owner.override_name_edit.text = ""
+		# Do not clear override_name_edit if user entered text
+		pass
 
 	match prop_type:
 		"color":
@@ -304,7 +311,6 @@ func update_value_input_control() -> void:
 			_owner.metadata_build_check.visible = false
 			if _owner.metadata_file_label: _owner.metadata_file_label.visible = false
 			if _owner.metadata_builder_box: _owner.metadata_builder_box.visible = false
-			_owner.metadata_build_check.button_pressed = false
 
 # Parts Builder Management
 func on_new_override_pressed() -> void:
@@ -329,6 +335,8 @@ func on_new_override_pressed() -> void:
 	update_value_input_control()
 
 func on_duplicate_override_pressed() -> void:
+	if _owner.has_method("set_status"):
+		await _owner.set_status("Duplicating override...", true)
 	if not _owner._config_loaded:
 		if _owner.is_inside_tree() and Engine.is_editor_hint():
 			_owner._config.load_config()
@@ -388,6 +396,10 @@ func on_duplicate_override_pressed() -> void:
 	_owner._config.save_config()
 	refresh_parts_tree()
 	_owner._preview.apply_preview()
+	if _owner.has_method("set_status"):
+		_owner.set_status("Theme part saved successfully!", false)
+	if _owner.has_method("set_status"):
+		_owner.set_status("Override duplicated successfully!", false)
 
 func on_delete_override_pressed() -> void:
 	if not _owner._config_loaded:
@@ -429,6 +441,8 @@ func on_delete_override_pressed() -> void:
 
 # Parts Builder Management
 func on_add_part_pressed() -> void:
+	if _owner.has_method("set_status"):
+		await _owner.set_status("Saving theme part...", true)
 	_owner._config.ensure_config_loaded()
 	var control_type: String
 	var is_custom = _owner.custom_type_check.button_pressed
@@ -546,14 +560,19 @@ func on_add_part_pressed() -> void:
 		"prop_name": prop_key
 	}
 	update_value_input_control()
-	if is_custom:
-		_owner.custom_type_name_edit.text = ""
-		_owner.custom_type_check.button_pressed = false
 	_owner._config.save_config()
 	refresh_parts_tree()
 	_owner._preview.apply_preview()
 
 func refresh_parts_tree() -> void:
+	var sel_meta = _owner._target_select_meta
+	if sel_meta == null and _owner.parts_tree != null:
+		var cur_sel = _owner.parts_tree.get_selected()
+		if cur_sel:
+			var m = cur_sel.get_metadata(0)
+			if m is Dictionary:
+				sel_meta = m
+
 	_owner.parts_tree.clear()
 	var root = _owner.parts_tree.create_item()
 	_owner.parts_tree.hide_root = true
@@ -584,16 +603,16 @@ func refresh_parts_tree() -> void:
 				}
 				val_item.set_metadata(0, meta)
 				
-				if _owner._target_select_meta is Dictionary:
-					if _owner._target_select_meta["control_type"] == ctrl_type \
-						and _owner._target_select_meta["sec_name"] == sec_name \
-						and _owner._target_select_meta["prop_name"] == prop_name:
+				if sel_meta is Dictionary:
+					if sel_meta.get("control_type") == ctrl_type \
+						and sel_meta.get("sec_name") == sec_name \
+						and sel_meta.get("prop_name") == prop_name:
 							val_item.select(0)
 							_owner.parts_tree.scroll_to_item(val_item)
-							on_tree_item_selected()
+							if _owner._target_select_meta != null:
+								on_tree_item_selected()
 
 	_owner._target_select_meta = null
-
 func on_tree_item_selected() -> void:
 	var item = _owner.parts_tree.get_selected()
 	if not item:
@@ -601,14 +620,13 @@ func on_tree_item_selected() -> void:
 		
 	var meta = item.get_metadata(0)
 	if meta is Dictionary and meta.has("control_type"):
+		_owner._loading_from_tree = true
 		var ctrl_type = meta["control_type"]
 		var sec_name = meta["sec_name"]
 		var prop_name = meta["prop_name"]
 		
 		_owner._active_prop_key = prop_name
 		_owner._creating_new_override = false
-		if _owner.metadata_build_check:
-			_owner.metadata_build_check.button_pressed = false
 		
 		# 1. Update Control Type and Custom Checkboxes
 		if _owner.theme_variations.has(ctrl_type):
@@ -651,6 +669,7 @@ func on_tree_item_selected() -> void:
 				
 		# 4. Update the input widgets and Name/ID
 		update_value_input_control()
+		_owner._loading_from_tree = false
 
 func on_override_name_changed(new_text: String) -> void:
 	if not _owner._config_loaded:
@@ -836,8 +855,6 @@ func on_resource_picker_changed(res: Resource) -> void:
 func on_prop_type_selected(index: int) -> void:
 	_owner._active_prop_key = ""
 	_owner._creating_new_override = true
-	if _owner.metadata_build_check:
-		_owner.metadata_build_check.button_pressed = false
 	update_property_names()
 
 func on_prop_name_selected(index: int) -> void:

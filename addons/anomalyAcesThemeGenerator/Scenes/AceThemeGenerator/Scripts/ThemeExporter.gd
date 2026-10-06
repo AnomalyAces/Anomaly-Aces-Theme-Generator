@@ -9,9 +9,13 @@ func _init(owner) -> void:
 
 # Generate native Godot Theme resource
 func on_compile_pressed() -> void:
+	if _owner.has_method("set_status"):
+		await _owner.set_status("Compiling Godot Theme package...", true)
 	var out_path = _owner.output_file.strip_edges()
 	if out_path == "":
 		printerr("No output path specified!")
+		if _owner.has_method("set_status"):
+			_owner.set_status("No output path specified.", false)
 		return
 
 	_owner._config.ensure_dir_exists(out_path.get_base_dir())
@@ -26,8 +30,12 @@ func on_compile_pressed() -> void:
 		export_theme_package(out_path.get_base_dir())
 		if Engine.is_editor_hint():
 			EditorInterface.get_resource_filesystem().scan()
+		if _owner.has_method("set_status"):
+			_owner.set_status("Theme compiled and exported successfully!", false)
 	else:
 		printerr("Failed to save Theme Resource at: ", out_path, " Error: ", err)
+		if _owner.has_method("set_status"):
+			_owner.set_status("Failed to save Theme Resource.", false)
 
 func export_theme_package(target_dir: String) -> void:
 	print("Packaging theme to target directory: ", target_dir)

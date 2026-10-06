@@ -54,7 +54,6 @@
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
-	"settings_split_ratio": 0.5,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {
@@ -77,6 +76,20 @@
 			}
 		},
 		"Button": {
+			"colors": {
+				"icon_hover_color": {
+					"id": "button_icon_hover_color",
+					"value": "#ffffffff"
+				},
+				"icon_normal_color": {
+					"id": "button_icon_normal_color",
+					"value": "#ffffffff"
+				},
+				"icon_pressed_color": {
+					"id": "button_icon_pressed_color",
+					"value": "#ffffffff"
+				}
+			},
 			"styleboxes": {
 				"disabled": {
 					"id": "button_disabled",
@@ -157,6 +170,28 @@
 				"pressed": {
 					"id": "forward_button_pressed",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/forward_button_pressed.tres"
+				}
+			}
+		},
+		"GroupOnlineButton": {
+			"icons": {
+				"icon": {
+					"id": "group_online_button_icon",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/Group_Online_icon.svg"
+				}
+			},
+			"styleboxes": {
+				"hover": {
+					"id": "group_online_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/group_online_hover.tres"
+				},
+				"normal": {
+					"id": "group_online_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/group_online_normal.tres"
+				},
+				"pressed": {
+					"id": "group_online_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/group_online_pressed.tres"
 				}
 			}
 		},
@@ -332,6 +367,42 @@
 				}
 			}
 		},
+		"SoloOnlineButton": {
+			"colors": {
+				"icon_hover_color": {
+					"id": "solo_online_icon_hover_color",
+					"value": "#ffffffff"
+				},
+				"icon_normal_color": {
+					"id": "solo_online_icon_normal_color",
+					"value": "#ffffffff"
+				},
+				"icon_pressed_color": {
+					"id": "solo_online_icon_pressed_color",
+					"value": "#ffffffff"
+				}
+			},
+			"icons": {
+				"icon": {
+					"id": "solo_online_button_icon",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Images/Solo_Online_icon.svg"
+				}
+			},
+			"styleboxes": {
+				"hover": {
+					"id": "solo_online_button_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_online_hover.tres"
+				},
+				"normal": {
+					"id": "solo_online_button_normal",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_online_normal.tres"
+				},
+				"pressed": {
+					"id": "solo_online_button_pressed",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/solo_online_pressed.tres"
+				}
+			}
+		},
 		"ToggleGenderFemaleButton": {
 			"styleboxes": {
 				"hover": {
@@ -372,6 +443,7 @@
 		"DecreaseButton": "Button",
 		"ForwardButton": "Button",
 		"GenderToggleMaleButton": "Button",
+		"GroupOnlineButton": "Button",
 		"HSliderBGreen": "HSlider",
 		"HSliderBlue": "HSlider",
 		"HSliderRed": "HSlider",
@@ -379,6 +451,7 @@
 		"LineEditError": "LineEdit",
 		"LineEditErrorLabel": "Label",
 		"SoloChallengeButton": "Button",
+		"SoloOnlineButton": "Button",
 		"ToggleGenderFemaleButton": "Button",
 		"ToggleGenderMaleButton": "Button"
 	}

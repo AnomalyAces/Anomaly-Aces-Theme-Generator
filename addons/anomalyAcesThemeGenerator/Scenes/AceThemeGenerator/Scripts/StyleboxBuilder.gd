@@ -17,6 +17,20 @@ func on_metadata_build_check_toggled(pressed: bool) -> void:
 func refresh_metadata_dropdown() -> void:
 	if not _owner.metadata_dropdown:
 		return
+
+	var prev_selected = ""
+	if _owner.metadata_dropdown.selected != -1 and _owner.metadata_dropdown.item_count > 0:
+		prev_selected = _owner.metadata_dropdown.get_item_text(_owner.metadata_dropdown.selected)
+
+	# If already populated, preserve selection and do not re-read from disk
+	if _owner.metadata_dropdown.item_count > 0:
+		if prev_selected != "":
+			for i in range(_owner.metadata_dropdown.item_count):
+				if _owner.metadata_dropdown.get_item_text(i) == prev_selected:
+					_owner.metadata_dropdown.selected = i
+					break
+		return
+
 	_owner.metadata_dropdown.clear()
 	var svg_keys: Array = []
 	if FileAccess.file_exists(_owner.metadata_file):
@@ -35,7 +49,16 @@ func refresh_metadata_dropdown() -> void:
 	for k in svg_keys:
 		_owner.metadata_dropdown.add_item(k)
 
+	if prev_selected != "":
+		for i in range(_owner.metadata_dropdown.item_count):
+			if _owner.metadata_dropdown.get_item_text(i) == prev_selected:
+				_owner.metadata_dropdown.selected = i
+				break
+
 func ensure_metadata_controls() -> void:
+	if _owner.metadata_build_check != null and is_instance_valid(_owner.metadata_build_check) and _owner.metadata_builder_box != null and is_instance_valid(_owner.metadata_builder_box):
+		return
+
 	var grid = _owner.override_name_edit.get_parent()
 	if not grid:
 		return
@@ -336,6 +359,8 @@ func _on_icon_save_path_selected(save_path: String, svg_key: String, dialog: Nod
 
 func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog: Node) -> void:
 	dialog.queue_free()
+	if _owner.has_method("set_status"):
+		await _owner.set_status("Building StyleBox resource from SVG...", true)
 	
 	# Guard: Only build/replace if build checkbox is checked
 	if _owner.metadata_build_check and not _owner.metadata_build_check.button_pressed:
@@ -401,12 +426,29 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 				if (p_count > 0 and r_count > 0) or p_count > 1 or s_txt.contains("<polygon") or s_txt.contains("<clipPath"):
 					is_icon_or_custom_shape = true
 
+	# Check if SVG has both a background container rectangle and vector icon graphics
+	var has_bg_rect_and_icon = false
+	var svg_temp_p = _owner.image_folder.path_join(svg_key)
+	if FileAccess.file_exists(svg_temp_p):
+		var tf = FileAccess.open(svg_temp_p, FileAccess.READ)
+		if tf:
+			var s_body = tf.get_as_text()
+			tf.close()
+			var p_cnt = s_body.count("<path")
+			var r_cnt = s_body.count("<rect")
+			if r_cnt > 0 and (p_cnt > 0 or s_body.contains("<polygon")):
+				has_bg_rect_and_icon = true
+
 	var is_button_style = name_lower.contains("button") and not is_icon_or_custom_shape
-	if is_icon_or_custom_shape:
+	if has_bg_rect_and_icon:
+		# Method A: Button with Background Container + Icon -> StyleBoxFlat + automatic icon extraction
+		new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
+		_extract_and_assign_button_icon(entry, svg_key, true)
+	elif is_icon_or_custom_shape:
 		if shadow_effect != null:
 			# Method A: Has Icon + Has Glow -> StyleBoxFlat with glow + automatic icon extraction
 			new_stylebox = _build_stylebox_flat(entry, shadow_effect, svg_key)
-			_extract_and_assign_button_icon(entry, svg_key)
+			_extract_and_assign_button_icon(entry, svg_key, true)
 		else:
 			# Method B: Has Icon + No Glow (BackButton pattern) -> StyleBoxTexture directly from SVG
 			new_stylebox = _build_stylebox_texture(entry, svg_key)
@@ -427,8 +469,12 @@ func _on_stylebox_save_path_selected(save_path: String, svg_key: String, dialog:
 			var loaded_res = ResourceLoader.load(save_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 			if loaded_res:
 				_assign_built_resource_to_value_input(loaded_res, save_path)
+		if _owner.has_method("set_status"):
+			_owner.set_status("StyleBox generated and assigned successfully!", false)
 	else:
 		printerr("Failed to save StyleBox resource: ", err)
+		if _owner.has_method("set_status"):
+			_owner.set_status("Failed to save StyleBox resource.", false)
 
 func _build_stylebox_flat(entry: Dictionary, shadow_effect: Variant, svg_key: String) -> StyleBoxFlat:
 	# Build programmatically styled StyleBoxFlat
@@ -733,20 +779,41 @@ func _extract_icon_from_svg(svg_path: String, output_path: String) -> bool:
 	var svg_text = file.get_as_text()
 	file.close()
 	
-	# 1. Remove <g filter="...">...<rect.../>...</g>
-	var g_filter_rect_regex = RegEx.new()
-	g_filter_rect_regex.compile("<g\\s+filter=[\"'][^\"']*[\"'][^>]*>\\s*<rect[^>]+>\\s*<\\/g>")
-	var cleaned = g_filter_rect_regex.sub(svg_text, "")
+	# Find background rect coordinates if present to match viewBox
+	var rect_regex = RegEx.new()
+	rect_regex.compile("<rect[^>]+x=\"([0-9.]+)\"[^>]+y=\"([0-9.]+)\"[^>]+width=\"([0-9.]+)\"[^>]+height=\"([0-9.]+)\"")
+	var r_match = rect_regex.search(svg_text)
+	
+	# 1. Remove <filter ...>...</filter>
+	var filter_regex = RegEx.new()
+	filter_regex.compile("<filter[\\s\\S]*?<\\/filter>")
+	var cleaned = filter_regex.sub(svg_text, "", true)
 	
 	# 2. Remove standalone background rect
-	var rect_regex = RegEx.new()
-	rect_regex.compile("<rect[^>]+fill=[\"']#(?:[0-9a-fA-F]{3,8})[\"'][^>]*\\/?>")
-	cleaned = rect_regex.sub(cleaned, "")
+	var bg_rect_regex = RegEx.new()
+	bg_rect_regex.compile("<rect[^>]+fill=[\"']#(?:[0-9a-fA-F]{3,8})[\"'][^>]*\\/?>")
+	cleaned = bg_rect_regex.sub(cleaned, "", true)
 	
-	# 3. Remove <defs>...</defs>
-	var defs_regex = RegEx.new()
-	defs_regex.compile("<defs>[\\s\\S]*?<\\/defs>")
-	cleaned = defs_regex.sub(cleaned, "")
+	# 3. Remove empty groups
+	var empty_g_regex = RegEx.new()
+	empty_g_regex.compile("<g\\s*>\\s*<\\/g>")
+	cleaned = empty_g_regex.sub(cleaned, "", true)
+	
+	# 4. Remove empty defs
+	var empty_defs_regex = RegEx.new()
+	empty_defs_regex.compile("<defs>\\s*<\\/defs>")
+	cleaned = empty_defs_regex.sub(cleaned, "", true)
+	
+	# 5. Align SVG canvas size and viewBox to button body if rect was found
+	if r_match:
+		var rx = r_match.get_string(1)
+		var ry = r_match.get_string(2)
+		var rw = r_match.get_string(3)
+		var rh = r_match.get_string(4)
+		var svg_tag_regex = RegEx.new()
+		svg_tag_regex.compile("<svg\\s+width=\"[0-9.]+\"\\s+height=\"[0-9.]+\"\\s+viewBox=\"[^\"]+\"")
+		var new_tag = '<svg width="%d" height="%d" viewBox="%s %s %s %s"' % [int(float(rw)), int(float(rh)), rx, ry, rw, rh]
+		cleaned = svg_tag_regex.sub(cleaned, new_tag)
 	
 	if not (cleaned.contains("<path") or cleaned.contains("<polygon") or cleaned.contains("<circle")):
 		return false
@@ -758,7 +825,7 @@ func _extract_icon_from_svg(svg_path: String, output_path: String) -> bool:
 	out_file.close()
 	return true
 
-func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String) -> void:
+func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String, defer_refresh: bool = false) -> void:
 	var svg_path = _owner.image_folder.path_join(svg_key)
 	if not FileAccess.file_exists(svg_path):
 		return
@@ -779,10 +846,19 @@ func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String) -> void
 	if Engine.is_editor_hint():
 		var fs = EditorInterface.get_resource_filesystem()
 		if fs:
-			fs.reimport_files([icon_path])
+			if FileAccess.file_exists(icon_path + ".import"):
+				fs.reimport_files([icon_path])
+			else:
+				fs.update_file(icon_path)
+				fs.scan()
 			
-	var control_type = _owner.control_type_edit.text.strip_edges()
-	if control_type == "":
+	var control_type = ""
+	if _owner.custom_type_check.button_pressed and _owner.custom_type_name_edit.text.strip_edges() != "":
+		control_type = _owner.custom_type_name_edit.text.strip_edges()
+	elif _owner.control_type_edit.text.strip_edges() != "":
+		control_type = _owner.control_type_edit.text.strip_edges()
+		
+	if control_type == "" or control_type.to_lower() == "button":
 		var words = base_stem.replace("-", "_").split("_", false)
 		var pascal_name = ""
 		for w in words:
@@ -801,17 +877,12 @@ func _extract_and_assign_button_icon(entry: Dictionary, svg_key: String) -> void
 		"value": icon_path
 	}
 	
-	if not _owner.theme_variations.has(control_type):
+	if control_type != "Button" and not _owner.theme_variations.has(control_type):
 		_owner.theme_variations[control_type] = "Button"
 
-	if not _owner.theme_parts[control_type].has("colors"):
-		_owner.theme_parts[control_type]["colors"] = {}
-	for ic_name in ["icon_normal_color", "icon_pressed_color", "icon_hover_color"]:
-		if not _owner.theme_parts[control_type]["colors"].has(ic_name):
-			_owner.theme_parts[control_type]["colors"][ic_name] = {
-				"id": control_type.to_snake_case() + "_" + ic_name,
-				"value": "#ffffffff"
-			}
-		
-	_owner._config.save_config()
+
+	if not defer_refresh:
+		_owner._config.save_config()
+		_owner._parts_manager.refresh_parts_tree()
+		_owner._preview.apply_preview()
 	print("Extracted icon and assigned to ", control_type, ".icons.icon: ", icon_path)

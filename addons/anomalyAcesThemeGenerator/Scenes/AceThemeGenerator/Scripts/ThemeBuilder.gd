@@ -14,7 +14,7 @@ func build_theme() -> Theme:
 	# Set Type Variations first so custom types inherit base properties
 	for custom_type in _owner.theme_variations.keys():
 		var base_type = _owner.theme_variations[custom_type]
-		if base_type != "":
+		if base_type != "" and custom_type != base_type:
 			temp_theme.set_type_variation(custom_type, base_type)
 
 	for ctrl_type in _owner.theme_parts.keys():

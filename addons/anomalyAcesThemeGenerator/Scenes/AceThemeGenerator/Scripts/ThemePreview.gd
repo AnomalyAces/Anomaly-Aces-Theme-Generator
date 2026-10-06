@@ -3,6 +3,9 @@ extends RefCounted
 ## Live preview panel rendering — instantiates control nodes, applies states, sizes from metadata.
 
 var _owner  # Reference to AceThemeGenerator
+var _pass_sb_cache: Dictionary = {}
+var _cached_metadata: Dictionary = {}
+var _cached_metadata_mtime: int = 0
 
 func _init(owner) -> void:
 	_owner = owner
@@ -15,25 +18,40 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 	var section = _owner.theme_parts[ctrl_type]
 	var has_normal_configs = false
 	
-	for sec_name in section.keys():
-		var overrides = section[sec_name]
-		for prop_name in overrides.keys():
-			var base_name = _owner.get_base_prop_name(prop_name)
-			var prop_lower = base_name.to_lower()
-			if "disabled" in prop_lower:
-				if not states.has("disabled"):
-					states.append("disabled")
-			elif "pressed" in prop_lower:
-				if not states.has("pressed"):
-					states.append("pressed")
-			elif "read_only" in prop_lower:
-				if not states.has("read_only"):
-					states.append("read_only")
-			elif "focus" in prop_lower:
-				if not states.has("focus"):
-					states.append("focus")
+	# If control defines styleboxes, multi-state preview cards (pressed, disabled, etc.)
+	# are strictly determined by the styleboxes configured for this control.
+	if section.has("styleboxes") and not section["styleboxes"].is_empty():
+		var sboxes = section["styleboxes"]
+		for sb_name in sboxes.keys():
+			var base_name = _owner.get_base_prop_name(sb_name).to_lower()
+			if "disabled" in base_name:
+				if not states.has("disabled"): states.append("disabled")
+			elif "pressed" in base_name:
+				if not states.has("pressed"): states.append("pressed")
+			elif "read_only" in base_name:
+				if not states.has("read_only"): states.append("read_only")
+			elif "focus" in base_name:
+				if not states.has("focus"): states.append("focus")
 			else:
 				has_normal_configs = true
+	else:
+		for sec_name in section.keys():
+			var overrides = section[sec_name]
+			for prop_name in overrides.keys():
+				var base_name = _owner.get_base_prop_name(prop_name).to_lower()
+				# Icon tint colors should not trigger state previews
+				if base_name.begins_with("icon_"):
+					continue
+				if "disabled" in base_name:
+					if not states.has("disabled"): states.append("disabled")
+				elif "pressed" in base_name:
+					if not states.has("pressed"): states.append("pressed")
+				elif "read_only" in base_name:
+					if not states.has("read_only"): states.append("read_only")
+				elif "focus" in base_name:
+					if not states.has("focus"): states.append("focus")
+				else:
+					has_normal_configs = true
 				
 	if has_normal_configs or states.is_empty():
 		if not states.has("normal"):
@@ -147,6 +165,8 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 func load_stylebox_uncached(val_path: String) -> StyleBox:
 	if val_path == "" or not ResourceLoader.exists(val_path):
 		return null
+	if _pass_sb_cache.has(val_path):
+		return _pass_sb_cache[val_path]
 		
 	var sb = ResourceLoader.load(val_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 	if sb is StyleBoxTexture:
@@ -157,6 +177,7 @@ func load_stylebox_uncached(val_path: String) -> StyleBox:
 				var fresh_tex = ResourceLoader.load(tex_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 				if fresh_tex:
 					tex_sb.texture = fresh_tex
+	_pass_sb_cache[val_path] = sb
 	return sb
 
 # Resolve the SVG key from a stylebox record for metadata dimension lookup
@@ -363,6 +384,7 @@ func _find_common_design_size(ctrl_type: String, states: Array[String], metadata
 
 # Build Native Theme Object & Preview it
 func apply_preview() -> void:
+	_pass_sb_cache.clear()
 	var temp_theme = _owner._builder.build_theme()
 	_owner.preview_area.theme = temp_theme
  
@@ -774,15 +796,20 @@ func on_preview_item_gui_input(event: InputEvent, inst: Control) -> void:
 		le.focus_exited.connect(func(): on_finish.call(le.text, true))
 
 func _load_metadata() -> Dictionary:
-	var metadata = {}
-	if FileAccess.file_exists(_owner.metadata_file):
-		var file = FileAccess.open(_owner.metadata_file, FileAccess.READ)
-		if file:
-			var json = JSON.new()
-			var err = json.parse(file.get_as_text())
-			file.close()
-			if err == OK:
-				var data = json.get_data()
-				if data is Dictionary:
-					metadata = data
-	return metadata
+	if not FileAccess.file_exists(_owner.metadata_file):
+		return {}
+	var mtime = FileAccess.get_modified_time(_owner.metadata_file)
+	if not _cached_metadata.is_empty() and _cached_metadata_mtime == mtime:
+		return _cached_metadata
+	var file = FileAccess.open(_owner.metadata_file, FileAccess.READ)
+	if file:
+		var json = JSON.new()
+		var err = json.parse(file.get_as_text())
+		file.close()
+		if err == OK:
+			var data = json.get_data()
+			if data is Dictionary:
+				_cached_metadata = data
+				_cached_metadata_mtime = mtime
+				return _cached_metadata
+	return _cached_metadata
