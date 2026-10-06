@@ -185,11 +185,12 @@ func export_theme_package(target_dir: String) -> void:
 			var err = DirAccess.copy_absolute(old_path, new_path)
 			if err != OK:
 				copy_errors.append("Failed to copy %s to %s (Error: %d)" % [old_path, new_path, err])
-			else:
-				var import_old = old_path + ".import"
-				var import_new = new_path + ".import"
-				if FileAccess.file_exists(import_old):
-					DirAccess.copy_absolute(import_old, import_new)
+			elif FileAccess.file_exists(new_path + ".import"):
+				# Remove any stale .import left over from a previous export into this folder.
+				DirAccess.remove_absolute(new_path + ".import")
+			# NOTE: .import files are intentionally NOT copied. Copying them duplicates the
+			# source asset's UID, which makes Godot resolve working-folder references to the
+			# packaged copy (or vice versa). Godot regenerates fresh .import files/UIDs on scan.
 		else:
 			copy_errors.append("Source file not found: %s" % old_path)
 			
@@ -227,6 +228,16 @@ func export_theme_package(target_dir: String) -> void:
 					var new_res_path = path_replacements[old_res_path]
 					if content.contains(old_res_path):
 						content = content.replace(old_res_path, new_res_path)
+						modified = true
+						
+				# Strip UIDs from packaged resources so they never collide with the working-folder
+				# originals. Godot falls back to the (rewritten) path and assigns new UIDs on scan.
+				if ext in ["tres", "theme"]:
+					var uid_regex = RegEx.new()
+					uid_regex.compile(" uid=\"uid://[^\"]*\"")
+					var stripped = uid_regex.sub(content, "", true)
+					if stripped != content:
+						content = stripped
 						modified = true
 						
 				if modified:

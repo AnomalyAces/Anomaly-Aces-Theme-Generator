@@ -107,9 +107,47 @@ func clean_svg_filters(file_path: String) -> void:
 		return
 		
 	var new_content = regex.sub(content, "", true)
+	
+	# Automatically un-crop SVGs exported from Figma with cropped viewBoxes
+	var filter_regex = RegEx.new()
+	filter_regex.compile("<filter[^>]+width=\"([0-9.]+)\"[^>]+height=\"([0-9.]+)\"")
+	var f_match = filter_regex.search(content)
+	if f_match:
+		var fw = int(round(float(f_match.get_string(1))))
+		var fh = int(round(float(f_match.get_string(2))))
+		var svg_tag_regex = RegEx.new()
+		svg_tag_regex.compile("<svg\\s+width=\"([0-9.]+)\"\\s+height=\"([0-9.]+)\"\\s+viewBox=\"([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\"")
+		var s_match = svg_tag_regex.search(content)
+		if s_match:
+			var sw = float(s_match.get_string(1))
+			var sh = float(s_match.get_string(2))
+			var vx = float(s_match.get_string(3))
+			var vy = float(s_match.get_string(4))
+			if fw > sw and fh > sh and (vx > 0.0 or vy > 0.0):
+				var new_tag = '<svg width="%d" height="%d" viewBox="0 0 %d %d"' % [fw, fh, fw, fh]
+				new_content = svg_tag_regex.sub(new_content, new_tag)
+
+	if file_path.to_lower().contains("color_selection") or file_path.to_lower().contains("circle"):
+		var circle_regex = RegEx.new()
+		circle_regex.compile("<circle[^>]+r=\"([0-9.]+)\"[^>]+stroke-width=\"([0-9.]+)\"")
+		var c_match = circle_regex.search(content)
+		if c_match:
+			var cr = float(c_match.get_string(1))
+			var csw = float(c_match.get_string(2))
+			var full_dim = int(round((cr + csw / 2.0) * 2.0))
+			var svg_tag_regex2 = RegEx.new()
+			svg_tag_regex2.compile("<svg\\s+width=\"([0-9.]+)\"\\s+height=\"([0-9.]+)\"\\s+viewBox=\"([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\"")
+			var s_match2 = svg_tag_regex2.search(content)
+			if s_match2:
+				var sw2 = float(s_match2.get_string(1))
+				var vx2 = float(s_match2.get_string(3))
+				if full_dim > sw2 and vx2 > 0.0:
+					var new_tag = '<svg width="%d" height="%d" viewBox="0 0 %d %d"' % [full_dim, full_dim, full_dim, full_dim]
+					new_content = svg_tag_regex2.sub(new_content, new_tag)
+					
 	if new_content != content:
 		var write_file = FileAccess.open(file_path, FileAccess.WRITE)
 		if write_file:
 			write_file.store_string(new_content)
 			write_file.close()
-			print("Cleaned unsupported filters from SVG: ", file_path)
+			print("Cleaned unsupported filters / uncropped SVG: ", file_path)

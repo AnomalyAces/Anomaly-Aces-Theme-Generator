@@ -158,12 +158,39 @@ func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary, ctrl_typ
 
 	# 1. Primary check using ctrl_type (e.g. "Button", "IncreaseButton", "SubmitButtonLong", "LoginButton")
 	if ctrl_type != "":
+		var snake_type = ""
+		for i in range(ctrl_type.length()):
+			var ch = ctrl_type[i]
+			if i > 0 and ch >= "A" and ch <= "Z":
+				snake_type += "_" + ch
+			else:
+				snake_type += ch
+				
 		var candidates = [
 			ctrl_type + "_-_Regular.svg",
 			ctrl_type + "_Regular.svg",
 			ctrl_type + "_-_Normal.svg",
-			ctrl_type + ".svg"
+			ctrl_type + ".svg",
+			snake_type + "_-_Regular.svg",
+			snake_type + "_Regular.svg",
+			snake_type + "_-_Normal.svg",
+			snake_type + ".svg"
 		]
+		if ctrl_type.ends_with("Button") and ctrl_type != "Button":
+			var no_btn = ctrl_type.substr(0, ctrl_type.length() - 6)
+			var snake_no_btn = snake_type.substr(0, snake_type.length() - 7) if snake_type.ends_with("_Button") else no_btn
+			candidates.append(no_btn + "_-_Regular.svg")
+			candidates.append(no_btn + ".svg")
+			candidates.append(snake_no_btn + "_-_Regular.svg")
+			candidates.append(snake_no_btn + ".svg")
+			
+		if "back" in ctrl_type.to_lower():
+			candidates.append("Left_Arrow_-_Regular.svg")
+			candidates.append("Left_Arrow.svg")
+		elif "forward" in ctrl_type.to_lower():
+			candidates.append("Right_Arrow_-_Regular.svg")
+			candidates.append("Right_Arrow.svg")
+
 		for cand in candidates:
 			if metadata.has(cand):
 				var meta_entry = metadata[cand]
@@ -217,7 +244,7 @@ func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary, ctrl_typ
 			var m_lower = m_key.to_lower().replace("-", "_").replace(" ", "_").replace(".svg", "")
 			var all_match = true
 			for w in clean_words:
-				if not w in ["stylebox", "tres", "copy", "panel"] and not w in m_lower:
+				if not w in ["stylebox", "tres", "copy", "panel", "button"] and not w in m_lower:
 					all_match = false
 					break
 			if all_match:
