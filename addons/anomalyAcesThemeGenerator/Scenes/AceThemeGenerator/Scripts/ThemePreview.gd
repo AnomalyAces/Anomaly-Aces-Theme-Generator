@@ -152,7 +152,27 @@ func _resolve_svg_key(record, val_path: String) -> String:
 	return svg_key
 
 # Look up design dimensions from metadata using an SVG key with fuzzy suffix stripping and word matching
-func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary) -> Vector2:
+func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary, ctrl_type: String = "") -> Vector2:
+	if metadata.is_empty():
+		return Vector2.ZERO
+
+	# 1. Primary check using ctrl_type (e.g. "Button", "IncreaseButton", "SubmitButtonLong", "LoginButton")
+	if ctrl_type != "":
+		var candidates = [
+			ctrl_type + "_-_Regular.svg",
+			ctrl_type + "_Regular.svg",
+			ctrl_type + "_-_Normal.svg",
+			ctrl_type + ".svg"
+		]
+		for cand in candidates:
+			if metadata.has(cand):
+				var meta_entry = metadata[cand]
+				return Vector2(float(meta_entry.get("width", 0.0)), float(meta_entry.get("height", 0.0)))
+			for m_key in metadata.keys():
+				if m_key.to_lower() == cand.to_lower():
+					var meta_entry = metadata[m_key]
+					return Vector2(float(meta_entry.get("width", 0.0)), float(meta_entry.get("height", 0.0)))
+
 	if svg_key == "":
 		return Vector2.ZERO
 	
@@ -197,7 +217,7 @@ func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary) -> Vecto
 			var m_lower = m_key.to_lower().replace("-", "_").replace(" ", "_").replace(".svg", "")
 			var all_match = true
 			for w in clean_words:
-				if not w in ["stylebox", "tres", "copy", "button", "panel"] and not w in m_lower:
+				if not w in ["stylebox", "tres", "copy", "panel"] and not w in m_lower:
 					all_match = false
 					break
 			if all_match:
@@ -207,8 +227,14 @@ func _lookup_metadata_dimensions(svg_key: String, metadata: Dictionary) -> Vecto
 	return Vector2.ZERO
 
 # Resolve design dimensions with primary ground truth from StyleBoxTexture inner body size, followed by metadata.json, then minimum size
-func resolve_design_dimensions(active_stylebox: StyleBox, record, val_path: String, metadata: Dictionary) -> Vector2:
-	# 1. Primary Ground Truth for textures: The actual SVG Texture2D size minus expand margins is the exact inner component body size!
+func resolve_design_dimensions(active_stylebox: StyleBox, record, val_path: String, metadata: Dictionary, ctrl_type: String = "") -> Vector2:
+	# 1. Primary Ground Truth: Look up metadata.json for component design size
+	var svg_key = _resolve_svg_key(record, val_path)
+	var dims = _lookup_metadata_dimensions(svg_key, metadata, ctrl_type)
+	if dims.x >= 20.0 and dims.y >= 20.0:
+		return dims
+
+	# 2. Secondary Lookup for textures: The actual SVG Texture2D size minus expand margins
 	if active_stylebox is StyleBoxTexture and active_stylebox.texture:
 		var tex_sb = active_stylebox as StyleBoxTexture
 		var tex_size = tex_sb.texture.get_size()
@@ -218,12 +244,6 @@ func resolve_design_dimensions(active_stylebox: StyleBox, record, val_path: Stri
 			if body_w >= 20.0 and body_h >= 20.0:
 				return Vector2(body_w, body_h)
 			return tex_size
-
-	# 2. Secondary Lookup: Look up metadata.json for procedural shapes / StyleBoxFlat
-	var svg_key = _resolve_svg_key(record, val_path)
-	var dims = _lookup_metadata_dimensions(svg_key, metadata)
-	if dims.x >= 20.0 and dims.y >= 20.0:
-		return dims
 			
 	# 3. Fallback: Stylebox minimum size if >= 20x20
 	if active_stylebox != null:
@@ -264,6 +284,10 @@ func apply_node_preview_sizing(inst: Control, active_stylebox: StyleBox, design_
 
 # Find common design size from any state's stylebox metadata or texture size
 func _find_common_design_size(ctrl_type: String, states: Array[String], metadata: Dictionary) -> Vector2:
+	var dims = _lookup_metadata_dimensions("", metadata, ctrl_type)
+	if dims.x >= 20.0 and dims.y >= 20.0:
+		return dims
+
 	for s in states:
 		if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
 			var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
@@ -276,9 +300,9 @@ func _find_common_design_size(ctrl_type: String, states: Array[String], metadata
 			if rec != null:
 				var val_path = _owner.get_part_value(rec)
 				var sb = load_stylebox_uncached(str(val_path))
-				var dims = resolve_design_dimensions(sb, rec, str(val_path), metadata)
-				if dims.x >= 20.0 and dims.y >= 20.0:
-					return dims
+				var d = resolve_design_dimensions(sb, rec, str(val_path), metadata, ctrl_type)
+				if d.x >= 20.0 and d.y >= 20.0:
+					return d
 	return Vector2.ZERO
 
 # Build Native Theme Object & Preview it
@@ -494,7 +518,7 @@ func apply_preview() -> void:
 
 							# Resolve design size using metadata + active_stylebox texture fallback
 							if record != null:
-								var dims = resolve_design_dimensions(active_stylebox, record, val_path, metadata)
+								var dims = resolve_design_dimensions(active_stylebox, record, val_path, metadata, ctrl_type)
 								design_width = dims.x
 								design_height = dims.y
 							elif active_stylebox != null:
