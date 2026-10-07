@@ -386,6 +386,8 @@ func _export_preview_scene(target_dir: String, packaged_theme_path: String) -> v
 							inst.toggle_mode = true
 						inst.button_pressed = true
 						display_name += " (Pressed)"
+					elif state == "hover":
+						display_name += " (Hover)"
 					elif state == "read_only":
 						if "editable" in inst:
 							inst.editable = false

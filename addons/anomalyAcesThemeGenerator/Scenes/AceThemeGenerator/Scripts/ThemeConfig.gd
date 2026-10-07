@@ -49,6 +49,16 @@ func save_config() -> void:
 		file.store_string(JSON.stringify(config, "\t"))
 		file.close()
 
+	# Also sync to the theme's own config.json if output_file points to a theme subfolder
+	var theme_dir = _owner.output_file.get_base_dir()
+	if theme_dir != "" and theme_dir != dir_path:
+		var theme_config_path = theme_dir.path_join("config.json")
+		var theme_file = FileAccess.open(theme_config_path, FileAccess.WRITE)
+		if theme_file:
+			theme_file.store_string(JSON.stringify(config, "\t"))
+			theme_file.close()
+			print("Synchronized configuration to: ", theme_config_path)
+
 func load_config() -> void:
 	_owner._config_loaded = false
 	
@@ -70,8 +80,24 @@ func load_config() -> void:
 	var default_metadata_file = "res://addons/anomalyAcesThemeGenerator/working/Metadata/metadata.json"
 	var default_output_file = "res://addons/anomalyAcesThemeGenerator/working/Themes/theme.tres"
 
-	if FileAccess.file_exists(_owner.CONFIG_FILE_PATH):
-		var file = FileAccess.open(_owner.CONFIG_FILE_PATH, FileAccess.READ)
+	var active_config_path = _owner.CONFIG_FILE_PATH
+	# If the working config points to a theme subfolder containing config.json, prefer that config as source of truth
+	if FileAccess.file_exists(active_config_path):
+		var check_f = FileAccess.open(active_config_path, FileAccess.READ)
+		if check_f:
+			var check_str = check_f.get_as_text()
+			check_f.close()
+			var check_j = JSON.new()
+			if check_j.parse(check_str) == OK:
+				var c_data = check_j.get_data()
+				if c_data is Dictionary and c_data.has("output_file"):
+					var out_theme_dir = str(c_data["output_file"]).get_base_dir()
+					var candidate_cfg = out_theme_dir.path_join("config.json")
+					if out_theme_dir != "" and out_theme_dir != _owner.CONFIG_FILE_PATH.get_base_dir() and FileAccess.file_exists(candidate_cfg):
+						active_config_path = candidate_cfg
+
+	if FileAccess.file_exists(active_config_path):
+		var file = FileAccess.open(active_config_path, FileAccess.READ)
 		if file:
 			var json_string = file.get_as_text()
 			file.close()

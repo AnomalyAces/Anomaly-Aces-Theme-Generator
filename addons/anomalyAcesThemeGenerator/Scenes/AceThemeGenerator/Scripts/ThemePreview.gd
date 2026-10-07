@@ -18,6 +18,8 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 	var section = _owner.theme_parts[ctrl_type]
 	var has_normal_configs = false
 	
+	var is_btn = ctrl_type == "Button" or _owner.theme_variations.get(ctrl_type, "") == "Button"
+
 	# If control defines styleboxes, multi-state preview cards (pressed, disabled, etc.)
 	# are strictly determined by the styleboxes configured for this control.
 	if section.has("styleboxes") and not section["styleboxes"].is_empty():
@@ -32,7 +34,7 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 				if not states.has("read_only"): states.append("read_only")
 			elif "focus" in base_name:
 				if not states.has("focus"): states.append("focus")
-			elif "hover" in base_name:
+			elif "hover" in base_name and not is_btn:
 				if not states.has("hover"): states.append("hover")
 			else:
 				has_normal_configs = true
@@ -52,11 +54,15 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 					if not states.has("read_only"): states.append("read_only")
 				elif "focus" in base_name:
 					if not states.has("focus"): states.append("focus")
-				elif "hover" in base_name:
+				elif "hover" in base_name and not is_btn:
 					if not states.has("hover"): states.append("hover")
 				else:
 					has_normal_configs = true
 				
+	# Button hover does not need its own preview card — it is previewed by hovering over the normal state
+	if is_btn:
+		states.erase("hover")
+
 	if has_normal_configs or states.is_empty():
 		if not states.has("normal"):
 			states.insert(0, "normal")
@@ -209,6 +215,26 @@ func load_stylebox_uncached(val_path: String) -> StyleBox:
 					tex_sb.texture = fresh_tex
 	_pass_sb_cache[val_path] = sb
 	return sb
+
+func _are_styleboxes_identical(path_a: String, path_b: String) -> bool:
+	if path_a == "" or path_b == "":
+		return false
+	if path_a == path_b:
+		return true
+	var sb_a = load_stylebox_uncached(path_a)
+	var sb_b = load_stylebox_uncached(path_b)
+	if sb_a == null or sb_b == null:
+		return false
+	if sb_a is StyleBoxTexture and sb_b is StyleBoxTexture:
+		var tex_a = (sb_a as StyleBoxTexture).texture
+		var tex_b = (sb_b as StyleBoxTexture).texture
+		if tex_a != null and tex_b != null:
+			return tex_a.resource_path == tex_b.resource_path
+	elif sb_a is StyleBoxFlat and sb_b is StyleBoxFlat:
+		var f_a = sb_a as StyleBoxFlat
+		var f_b = sb_b as StyleBoxFlat
+		return f_a.bg_color == f_b.bg_color and f_a.border_color == f_b.border_color and f_a.shadow_color == f_b.shadow_color and f_a.shadow_size == f_b.shadow_size
+	return false
 
 # Resolve the SVG key from a stylebox record for metadata dimension lookup
 func _resolve_svg_key(record, val_path: String) -> String:

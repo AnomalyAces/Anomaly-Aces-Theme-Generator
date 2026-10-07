@@ -90,6 +90,16 @@ func build_theme() -> Theme:
 						fill_sb.expand_margin_top = slider_sb.expand_margin_top
 						fill_sb.expand_margin_bottom = slider_sb.expand_margin_bottom
 
+	# Ensure buttons with hover stylebox also have pressed fallback so runtime clicks don't revert to engine defaults,
+	# and toggle buttons with pressed stylebox have hover_pressed fallback.
+	for ctrl_type in _owner.theme_parts.keys():
+		var is_btn = ctrl_type == "Button" or _owner.theme_variations.get(ctrl_type, "") == "Button"
+		if is_btn:
+			if temp_theme.has_stylebox("hover", ctrl_type) and not temp_theme.has_stylebox("pressed", ctrl_type):
+				temp_theme.set_stylebox("pressed", ctrl_type, temp_theme.get_stylebox("hover", ctrl_type))
+			if temp_theme.has_stylebox("pressed", ctrl_type) and not temp_theme.has_stylebox("hover_pressed", ctrl_type):
+				temp_theme.set_stylebox("hover_pressed", ctrl_type, temp_theme.get_stylebox("pressed", ctrl_type))
+
 	# Keep every button state anchored to the normal state's geometry.
 	_align_button_state_margins(temp_theme)
 
