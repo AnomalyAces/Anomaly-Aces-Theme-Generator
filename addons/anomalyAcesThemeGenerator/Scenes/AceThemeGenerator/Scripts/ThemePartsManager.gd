@@ -229,8 +229,12 @@ func update_value_input_control() -> void:
 	var raw_val = null
 	if existing_val != null:
 		var ext_id = _owner.get_part_id(existing_val)
-		if _owner.override_name_edit.text.strip_edges() == "" or _owner._loading_from_tree:
-			_owner.override_name_edit.text = ext_id
+		if not _owner.override_name_edit.has_focus():
+			if _owner.override_name_edit.text.strip_edges() == "" or _owner._loading_from_tree:
+				if _owner.override_name_edit.text != ext_id:
+					var saved_caret = _owner.override_name_edit.caret_column
+					_owner.override_name_edit.text = ext_id
+					_owner.override_name_edit.caret_column = min(saved_caret, ext_id.length())
 		raw_val = _owner.get_part_value(existing_val)
 	else:
 		# Do not clear override_name_edit if user entered text
@@ -708,7 +712,11 @@ func on_override_name_changed(new_text: String) -> void:
 				"id": new_text.strip_edges()
 			}
 		_owner._config.save_config()
-		refresh_parts_tree()
+		
+		# Update the tree item text directly in place without rebuilding the tree or stealing focus/caret
+		var cur_sel = _owner.parts_tree.get_selected()
+		if cur_sel:
+			cur_sel.set_text(1, new_text.strip_edges())
 
 func on_color_picker_changed(color: Color) -> void:
 	if not _owner._config_loaded:

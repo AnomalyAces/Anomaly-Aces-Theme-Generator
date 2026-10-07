@@ -4,14 +4,15 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
-	"preview_font_size": 22,
+	"preview_font_size": 16,
 	"preview_item_width": 0,
-	"preview_separation": 40,
+	"preview_separation": 10,
 	"preview_texts": {
 		"BackButton_disabled": "",
 		"BackButton_hover": "",
 		"BackButton_normal": "",
 		"BackButton_pressed": "",
+		"BeginningStatsTabBar_normal": "",
 		"Button_disabled": "Disabled",
 		"Button_hover": "Hover",
 		"Button_normal": "Button",
@@ -54,6 +55,7 @@
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
+	"settings_split_ratio": 0.394836272040302,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {
@@ -76,9 +78,31 @@
 			}
 		},
 		"BeginningStatsTabBar": {
+			"constants": {
+				"h_separation": {
+					"id": "beginning_stats_tab_h_separation",
+					"value": 110.0
+				},
+				"side_margin": {
+					"id": "beginning_stats_tab_side_margin",
+					"value": 56.0
+				}
+			},
 			"styleboxes": {
+				"tab_disabled": {
+					"id": "beginning_stats_tab_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/beginning_stats_tab_disabled.tres"
+				},
+				"tab_hovered": {
+					"id": "beginning_stats_tab_hover",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/beginning_stats_tab_hover.tres"
+				},
+				"tab_selected": {
+					"id": "beginning_stats_tab_selected",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/beginning_stats_tab_selected.tres"
+				},
 				"tab_unselected": {
-					"id": "beginning_stats_tab_normal",
+					"id": "beginning_stats_tab_unselected",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/beginning_stats_tab_normal.tres"
 				}
 			}

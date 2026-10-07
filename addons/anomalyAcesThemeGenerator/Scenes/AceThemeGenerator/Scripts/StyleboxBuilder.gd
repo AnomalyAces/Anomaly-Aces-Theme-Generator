@@ -633,9 +633,11 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 	# Extract drop shadow offset to compensate for asymmetric SVG padding
 	var ox = 0.0
 	var oy = 0.0
+	var shadow_effect = null
 	var effects = entry.get("effects", [])
 	for effect in effects:
 		if effect is Dictionary and effect.get("type") == "DROP_SHADOW" and effect.get("visible", false):
+			shadow_effect = effect
 			var offset_dict = effect.get("offset", {})
 			ox = float(offset_dict.get("x", 0.0))
 			oy = float(offset_dict.get("y", 0.0))
@@ -730,14 +732,39 @@ func _build_stylebox_texture(entry: Dictionary, svg_key: String) -> StyleBoxText
 		svg_path.get_base_dir().path_join(svg_path.get_file().get_basename() + "_Composited.png")
 	]
 	for p in possible_pngs:
-		if FileAccess.file_exists(p) and ResourceLoader.exists(p):
+		if FileAccess.file_exists(p):
 			chosen_path = p
 			break
 	
-	if ResourceLoader.exists(chosen_path):
-		tex = ResourceLoader.load(chosen_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-		if tex:
-			tex_sb.texture = tex
+	# If this shape has a DROP_SHADOW glow effect, bake and embed the ImageTexture directly into the .tres file (no external PNG dependency)
+	if shadow_effect != null:
+		if chosen_path == svg_path or not FileAccess.file_exists(chosen_path):
+			# Attempt on-the-fly bake using Python resvg if no composited PNG exists yet
+			var comp_png = svg_path.get_base_dir().path_join(svg_path.get_file().get_basename() + "_Composited.png")
+			var global_svg = ProjectSettings.globalize_path(svg_path)
+			var global_out = ProjectSettings.globalize_path(comp_png)
+			var py_script = "import resvg_py, sys, re\ns = open(sys.argv[1], encoding='utf-8').read()\nf_match = re.search(r'id=\"(filter[^\"]+)\"', s)\nif f_match: s = s.replace('<g >', f'<g filter=\"url(#{f_match.group(1)})\">').replace('<g>', f'<g filter=\"url(#{f_match.group(1)})\">')\nopen(sys.argv[2], 'wb').write(resvg_py.svg_to_bytes(svg_string=s))\n"
+			var output = []
+			var exit_code = OS.execute("python", ["-c", py_script, global_svg, global_out], output)
+			if exit_code == 0 and FileAccess.file_exists(comp_png):
+				chosen_path = comp_png
+		
+		# Load raster image and create in-memory ImageTexture so Godot embeds it as a sub-resource directly in the .tres
+		if FileAccess.file_exists(chosen_path) and not chosen_path.ends_with(".svg"):
+			var img = Image.load_from_file(ProjectSettings.globalize_path(chosen_path))
+			if img and not img.is_empty():
+				tex_sb.texture = ImageTexture.create_from_image(img)
+	
+	# Fallback if texture not yet assigned (e.g. non-glowing shapes or SVG vector textures)
+	if tex_sb.texture == null:
+		if ResourceLoader.exists(chosen_path):
+			tex = ResourceLoader.load(chosen_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+			if tex:
+				tex_sb.texture = tex
+		elif FileAccess.file_exists(chosen_path):
+			var img = Image.load_from_file(ProjectSettings.globalize_path(chosen_path))
+			if img and not img.is_empty():
+				tex_sb.texture = ImageTexture.create_from_image(img)
 	
 	# Apply expand margins to draw the shadow padding glow outside the button boundaries
 	var expand_l = max(0.0, pad_x - ox)

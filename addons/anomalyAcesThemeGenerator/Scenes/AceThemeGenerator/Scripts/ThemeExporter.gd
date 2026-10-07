@@ -22,6 +22,7 @@ func on_compile_pressed() -> void:
 
 	_align_slider_margins_on_disk()
 	_align_button_state_margins_on_disk()
+	_align_tab_state_margins_on_disk()
 
 	var theme = _owner._builder.build_theme()
 	var err = ResourceSaver.save(theme, out_path)
@@ -537,3 +538,43 @@ func _align_button_state_margins_on_disk() -> void:
 			var save_err = ResourceSaver.save(state_sb, paths[state])
 			if save_err == OK:
 				print("Aligned button state margins on disk for: ", paths[state])
+
+func _align_tab_state_margins_on_disk() -> void:
+	for ctrl_type in _owner.theme_parts.keys():
+		var section = _owner.theme_parts[ctrl_type]
+		if not section.has("styleboxes"):
+			continue
+
+		var paths: Dictionary = {}
+		for sb_name in section["styleboxes"].keys():
+			var base_name = _owner.get_base_prop_name(sb_name)
+			if base_name in ["tab_unselected", "tab_selected", "tab_hovered", "tab_disabled"]:
+				paths[base_name] = str(_owner.get_part_value(section["styleboxes"][sb_name]))
+
+		var base_ref_state = ""
+		if paths.has("tab_unselected") and FileAccess.file_exists(paths["tab_unselected"]):
+			base_ref_state = "tab_unselected"
+		elif paths.has("tab_selected") and FileAccess.file_exists(paths["tab_selected"]):
+			base_ref_state = "tab_selected"
+
+		if base_ref_state == "":
+			continue
+
+		var ref_sb = ResourceLoader.load(paths[base_ref_state], "", ResourceLoader.CACHE_MODE_REPLACE)
+		if not ref_sb is StyleBox:
+			continue
+
+		for state in ["tab_unselected", "tab_selected", "tab_hovered", "tab_disabled"]:
+			if state == base_ref_state or not paths.has(state) or not FileAccess.file_exists(paths[state]):
+				continue
+			var state_sb = ResourceLoader.load(paths[state], "", ResourceLoader.CACHE_MODE_REPLACE)
+			if not state_sb is StyleBox:
+				continue
+
+			state_sb.content_margin_left = ref_sb.content_margin_left
+			state_sb.content_margin_top = ref_sb.content_margin_top
+			state_sb.content_margin_right = ref_sb.content_margin_right
+			state_sb.content_margin_bottom = ref_sb.content_margin_bottom
+			var save_err = ResourceSaver.save(state_sb, paths[state])
+			if save_err == OK:
+				print("Aligned tab state margins on disk for: ", paths[state])

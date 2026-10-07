@@ -19,6 +19,11 @@ func get_configured_states(ctrl_type: String) -> Array[String]:
 	var has_normal_configs = false
 	
 	var is_btn = ctrl_type == "Button" or _owner.theme_variations.get(ctrl_type, "") == "Button"
+	var is_tab = ctrl_type == "TabBar" or _owner.theme_variations.get(ctrl_type, "") == "TabBar" or ctrl_type == "TabContainer" or _owner.theme_variations.get(ctrl_type, "") == "TabContainer"
+
+	# TabBar and TabContainer inherently display all states simultaneously within a single instance across its tabs
+	if is_tab:
+		return ["normal"]
 
 	# If control defines styleboxes, multi-state preview cards (pressed, disabled, etc.)
 	# are strictly determined by the styleboxes configured for this control.
@@ -93,7 +98,20 @@ func instantiate_class_by_name(p_class: String) -> Control:
 					return inst
 	return null
 
-func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = null) -> void:
+func _get_tab_stylebox(sb_prop: String, theme_type: String, inst: Control, theme_ref: Theme) -> StyleBox:
+	if theme_ref != null:
+		if theme_ref.has_stylebox(sb_prop, theme_type):
+			return theme_ref.get_stylebox(sb_prop, theme_type)
+		elif theme_ref.has_stylebox(sb_prop, inst.get_class()):
+			return theme_ref.get_stylebox(sb_prop, inst.get_class())
+	if _owner.theme_parts.has(theme_type) and _owner.theme_parts[theme_type].has("styleboxes"):
+		var sboxes = _owner.theme_parts[theme_type]["styleboxes"]
+		if sboxes.has(sb_prop):
+			var v_p = _owner.get_part_value(sboxes[sb_prop])
+			return load_stylebox_uncached(str(v_p))
+	return null
+
+func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = null, design_size: Vector2 = Vector2.ZERO) -> void:
 	if inst is Panel or inst is PanelContainer or inst is ColorRect or inst is TextureRect or inst is Container or inst is Tree or inst is TabBar:
 		inst.custom_minimum_size = Vector2(0, 40)
 		
@@ -131,12 +149,155 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 			inst.add_theme_font_size_override("font_size", _owner.preview_font_size)
 	elif inst is TabBar:
 		inst.clip_tabs = false
-		inst.custom_minimum_size = Vector2(0, 40)
-		inst.add_tab("Unselected Tab")
-		inst.add_tab("Selected Tab")
-		inst.add_tab("Disabled Tab")
-		inst.set_tab_disabled(2, true)
+		
+		var tab_design_w = design_size.x
+		var tab_design_h = design_size.y
+		if tab_design_w < 20.0 and _owner.preview_item_width > 0:
+			tab_design_w = float(_owner.preview_item_width)
+		elif tab_design_w < 20.0:
+			tab_design_w = 200.0
+			
+		if tab_design_h < 20.0:
+			tab_design_h = 40.0
+			
+		inst.custom_minimum_size = Vector2(0, tab_design_h)
+		
+		# Inspect tab styleboxes to determine maximum expand margins and configured states
+		var max_expand_x = 0.0
+		var max_expand_y = 0.0
+		var has_disabled_style = false
+		
+		var tab_sb_names = ["tab_selected", "tab_hovered", "tab_unselected", "tab_disabled"]
+		for sb_prop in tab_sb_names:
+			var sb: StyleBox = _get_tab_stylebox(sb_prop, theme_type, inst, theme_ref)
+			if sb is StyleBox:
+				if sb_prop == "tab_disabled":
+					has_disabled_style = true
+				max_expand_x = max(max_expand_x, sb.expand_margin_left, sb.expand_margin_right)
+				max_expand_y = max(max_expand_y, sb.expand_margin_top, sb.expand_margin_bottom)
+				if sb is StyleBoxFlat and sb.shadow_size > 0:
+					max_expand_x = max(max_expand_x, float(sb.shadow_size))
+					max_expand_y = max(max_expand_y, float(sb.shadow_size))
+		
+		# 1. User-configured constants: user values take priority so users have complete freedom
+		var user_h_sep = -1
+		if _owner.theme_parts.has(theme_type) and _owner.theme_parts[theme_type].has("constants"):
+			var consts = _owner.theme_parts[theme_type]["constants"]
+			if consts.has("h_separation"):
+				user_h_sep = int(_owner.get_part_value(consts["h_separation"]))
+		if user_h_sep == -1 and theme_ref != null:
+			if theme_ref.has_constant("h_separation", theme_type):
+				user_h_sep = theme_ref.get_constant("h_separation", theme_type)
+			elif theme_ref.has_constant("h_separation", inst.get_class()):
+				user_h_sep = theme_ref.get_constant("h_separation", inst.get_class())
+		
+		var safe_h_sep = 16
+		if max_expand_x > 0.0:
+			safe_h_sep = int(ceil(max_expand_x * 2.0 + 16.0))
+		var final_h_sep = user_h_sep if user_h_sep >= 0 else safe_h_sep
+		inst.add_theme_constant_override("h_separation", final_h_sep)
+		
+		var user_side_margin = -1
+		if _owner.theme_parts.has(theme_type) and _owner.theme_parts[theme_type].has("constants"):
+			var consts = _owner.theme_parts[theme_type]["constants"]
+			if consts.has("side_margin"):
+				user_side_margin = int(_owner.get_part_value(consts["side_margin"]))
+		if user_side_margin == -1 and theme_ref != null:
+			if theme_ref.has_constant("side_margin", theme_type):
+				user_side_margin = theme_ref.get_constant("side_margin", theme_type)
+			elif theme_ref.has_constant("side_margin", inst.get_class()):
+				user_side_margin = theme_ref.get_constant("side_margin", inst.get_class())
+				
+		var safe_side_margin = 16
+		if max_expand_x > 0.0:
+			safe_side_margin = int(ceil(max_expand_x + 16.0))
+		var final_side_margin = user_side_margin if user_side_margin >= 0 else safe_side_margin
+		inst.add_theme_constant_override("side_margin", final_side_margin)
+		
+		# 2. Add tabs representing states
+		var t0 = "Tab 1 (Unselected)"
+		var t1 = "Tab 2 (Selected)"
+		inst.add_tab(t0)
+		inst.add_tab(t1)
+		if has_disabled_style:
+			inst.add_tab("Tab 3 (Disabled)")
+			inst.set_tab_disabled(2, true)
+			
 		inst.current_tab = 1 # Tab 1 is Selected; Tab 0 is Unselected!
+		
+		# 3. Dynamic Interactive Title Updating on click
+		inst.tab_changed.connect(func(new_idx):
+			for i in range(inst.get_tab_count()):
+				if inst.is_tab_disabled(i):
+					continue
+				var base_tab_title = "Tab " + str(i + 1)
+				if i == new_idx:
+					inst.set_tab_title(i, base_tab_title + " (Selected)")
+				else:
+					inst.set_tab_title(i, base_tab_title + " (Unselected)")
+		)
+		
+		# 4. Equalize Tab Sizes: ensure unselected, selected, and hover states have identical sizes
+		var font: Font = null
+		if theme_ref != null and theme_ref.has_font("font", theme_type):
+			font = theme_ref.get_font("font", theme_type)
+		elif theme_ref != null and theme_ref.has_font("font", inst.get_class()):
+			font = theme_ref.get_font("font", inst.get_class())
+		else:
+			font = ThemeDB.get_default_theme().get_font("font", "TabBar")
+			
+		var fsize = _owner.preview_font_size
+		if theme_ref != null:
+			if theme_ref.has_font_size("font_size", theme_type):
+				fsize = theme_ref.get_font_size("font_size", theme_type)
+			elif theme_ref.has_font_size("font_size", inst.get_class()):
+				fsize = theme_ref.get_font_size("font_size", inst.get_class())
+				
+		var target_tab_w = tab_design_w
+		if _owner.preview_item_width > 0:
+			target_tab_w = float(_owner.preview_item_width)
+			
+		var w0 = font.get_string_size(t0, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x if font else 100.0
+		var w1 = font.get_string_size(t1, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x if font else 100.0
+		var max_tw = max(w0, w1)
+		if target_tab_w < max_tw + 20.0:
+			target_tab_w = max_tw + 20.0
+			
+		# Create duplicated stylebox overrides with balanced content margins so total tab width is identical
+		var sb_unselected = _get_tab_stylebox("tab_unselected", theme_type, inst, theme_ref)
+		if sb_unselected is StyleBox:
+			var sb_u_dup = sb_unselected.duplicate()
+			var pad0 = max(6.0, (target_tab_w - w0) / 2.0)
+			sb_u_dup.content_margin_left = pad0
+			sb_u_dup.content_margin_right = pad0
+			inst.add_theme_stylebox_override("tab_unselected", sb_u_dup)
+			
+		var sb_selected = _get_tab_stylebox("tab_selected", theme_type, inst, theme_ref)
+		if sb_selected is StyleBox:
+			var sb_s_dup = sb_selected.duplicate()
+			var pad1 = max(6.0, (target_tab_w - w1) / 2.0)
+			sb_s_dup.content_margin_left = pad1
+			sb_s_dup.content_margin_right = pad1
+			inst.add_theme_stylebox_override("tab_selected", sb_s_dup)
+			
+		var sb_hovered = _get_tab_stylebox("tab_hovered", theme_type, inst, theme_ref)
+		if sb_hovered is StyleBox:
+			var sb_h_dup = sb_hovered.duplicate()
+			var pad0 = max(6.0, (target_tab_w - w0) / 2.0)
+			sb_h_dup.content_margin_left = pad0
+			sb_h_dup.content_margin_right = pad0
+			inst.add_theme_stylebox_override("tab_hovered", sb_h_dup)
+			
+		if has_disabled_style:
+			var sb_disabled = _get_tab_stylebox("tab_disabled", theme_type, inst, theme_ref)
+			if sb_disabled is StyleBox:
+				var sb_d_dup = sb_disabled.duplicate()
+				var w2 = font.get_string_size("Tab 3 (Disabled)", HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x if font else 100.0
+				var pad2 = max(6.0, (target_tab_w - w2) / 2.0)
+				sb_d_dup.content_margin_left = pad2
+				sb_d_dup.content_margin_right = pad2
+				inst.add_theme_stylebox_override("tab_disabled", sb_d_dup)
+				
 		if not has_theme_size:
 			inst.add_theme_font_size_override("font_size", _owner.preview_font_size)
 		if theme_ref != null:
@@ -155,6 +316,10 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 		var c2 = Control.new()
 		c2.name = "Tab 2"
 		inst.add_child(c2)
+		if inst.has_method("get_tab_bar"):
+			var internal_bar = inst.get_tab_bar()
+			if internal_bar is TabBar:
+				internal_bar.clip_tabs = false
 	elif "text" in inst:
 		inst.text = display_name
 		if not has_theme_size:
@@ -393,12 +558,15 @@ func apply_node_preview_sizing(inst: Control, active_stylebox: StyleBox, design_
 
 	if inst is TabBar:
 		var tab_h = max(40.0, final_height)
-		if item_width > 0:
-			inst.custom_minimum_size = Vector2(item_width, tab_h)
-			inst.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		else:
-			inst.custom_minimum_size = Vector2(0, tab_h)
-			inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		inst.custom_minimum_size = Vector2(0, tab_h)
+		inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		return
+
+	if inst is TabContainer:
+		var tab_h = max(80.0, final_height + 40.0)
+		inst.custom_minimum_size = Vector2(0, tab_h)
+		inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		inst.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		return
 
@@ -581,7 +749,12 @@ func apply_preview() -> void:
 					var h_sep = base_sep
 					var v_sep = base_sep
 					
-					# Detect if any state has a large glow shadow and ensure spacing prevents clipping/overlap
+					var is_tab_ctrl = ctrl_type == "TabBar" or _owner.theme_variations.get(ctrl_type, "") == "TabBar" or ctrl_type == "TabContainer" or _owner.theme_variations.get(ctrl_type, "") == "TabContainer"
+					if is_tab_ctrl:
+						sub_grid.columns = 1
+					
+					# Detect if any state has a large glow shadow or expand margins and ensure spacing prevents clipping/overlap
+					var max_ctrl_expand_y = 0.0
 					if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
 						var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
 						for key in sboxes.keys():
@@ -592,12 +765,27 @@ func apply_preview() -> void:
 								var min_sep = int(sb.shadow_size * 2 + 10)
 								if h_sep < min_sep:
 									h_sep = min_sep
+								if v_sep < min_sep:
 									v_sep = min_sep
+								max_ctrl_expand_y = max(max_ctrl_expand_y, float(sb.shadow_size))
+							elif sb is StyleBox:
+								var exp_x = max(sb.expand_margin_left, sb.expand_margin_right)
+								var exp_y = max(sb.expand_margin_top, sb.expand_margin_bottom)
+								if exp_x > 0 or exp_y > 0:
+									var min_sep_h = int(exp_x * 2 + 16)
+									var min_sep_v = int(exp_y * 2 + 16)
+									if h_sep < min_sep_h:
+										h_sep = min_sep_h
+									if v_sep < min_sep_v:
+										v_sep = min_sep_v
+									max_ctrl_expand_y = max(max_ctrl_expand_y, exp_y)
 									
 					sub_grid.add_theme_constant_override("h_separation", h_sep)
 					sub_grid.add_theme_constant_override("v_separation", v_sep)
+					if max_ctrl_expand_y > 0:
+						section_box.add_theme_constant_override("separation", int(max(8, max_ctrl_expand_y + 12)))
 					
-					if _owner.preview_item_width > 0:
+					if not is_tab_ctrl and _owner.preview_item_width > 0:
 						sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 					else:
 						sub_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -697,7 +885,7 @@ func apply_preview() -> void:
 										if sb is StyleBox:
 											active_stylebox = sb
 											
-							setup_preview_node(inst, item_text, temp_theme)
+							setup_preview_node(inst, item_text, temp_theme, common_size)
 							
 							# If stylebox wasn't directly loaded, look it up in the compiled theme
 							if active_stylebox == null:
@@ -711,8 +899,10 @@ func apply_preview() -> void:
 								elif inst is TabBar:
 									if state == "normal" and temp_theme.has_stylebox("tab_unselected", theme_type):
 										active_stylebox = temp_theme.get_stylebox("tab_unselected", theme_type)
-									elif state == "normal" and temp_theme.has_stylebox("tab_selected", theme_type):
+									elif (state == "pressed" or state == "normal") and temp_theme.has_stylebox("tab_selected", theme_type):
 										active_stylebox = temp_theme.get_stylebox("tab_selected", theme_type)
+									elif state == "hover" and temp_theme.has_stylebox("tab_hovered", theme_type):
+										active_stylebox = temp_theme.get_stylebox("tab_hovered", theme_type)
 									elif state == "disabled" and temp_theme.has_stylebox("tab_disabled", theme_type):
 										active_stylebox = temp_theme.get_stylebox("tab_disabled", theme_type)
 								else:
