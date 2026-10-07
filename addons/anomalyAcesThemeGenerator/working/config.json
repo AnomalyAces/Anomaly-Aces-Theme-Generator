@@ -4,9 +4,9 @@
 	"metadata_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/Metadata/metadata.json",
 	"output_file": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/CoTO.tres",
 	"preview_columns": 6,
-	"preview_font_size": 16,
+	"preview_font_size": 22,
 	"preview_item_width": 0,
-	"preview_separation": 10,
+	"preview_separation": 20,
 	"preview_texts": {
 		"BackButton_disabled": "",
 		"BackButton_hover": "",
@@ -55,7 +55,7 @@
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
-	"settings_split_ratio": 0.394836272040302,
+	"settings_split_ratio": 0.377441077441077,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {

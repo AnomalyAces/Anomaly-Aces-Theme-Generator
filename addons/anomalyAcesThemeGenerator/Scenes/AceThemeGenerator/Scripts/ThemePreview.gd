@@ -742,18 +742,28 @@ func apply_preview() -> void:
 					header_box.add_child(header_lbl)
 					section_box.add_child(header_box)
 					
+					var states = get_configured_states(ctrl_type)
+					var common_size = _find_common_design_size(ctrl_type, states, metadata)
+					
 					# Create the sub-grid for states
 					var sub_grid = GridContainer.new()
 					sub_grid.columns = _owner.preview_columns
 					var base_sep = _owner.preview_separation if ("preview_separation" in _owner and _owner.preview_separation > 0) else 40
-					var h_sep = base_sep
-					var v_sep = base_sep
+					
+					# Scale base separation proportionally for smaller elements so compact controls remain grouped
+					var elem_w = common_size.x if common_size.x >= 20.0 else 200.0
+					var elem_h = common_size.y if common_size.y >= 20.0 else 40.0
+					var size_ratio_x = clamp(elem_w / 200.0, 0.4, 1.0)
+					var size_ratio_y = clamp(elem_h / 60.0, 0.4, 1.0)
+					var h_sep = max(4, int(base_sep * size_ratio_x))
+					var v_sep = max(4, int(base_sep * size_ratio_y))
 					
 					var is_tab_ctrl = ctrl_type == "TabBar" or _owner.theme_variations.get(ctrl_type, "") == "TabBar" or ctrl_type == "TabContainer" or _owner.theme_variations.get(ctrl_type, "") == "TabContainer"
 					if is_tab_ctrl:
 						sub_grid.columns = 1
 					
-					# Detect if any state has a large glow shadow or expand margins and ensure spacing prevents clipping/overlap
+					# Detect if any state has a glow shadow or expand margins and ensure spacing prevents overlap
+					# Safety padding is scaled by element size so expand margins don't dwarf smaller buttons
 					var max_ctrl_expand_y = 0.0
 					if _owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has("styleboxes"):
 						var sboxes = _owner.theme_parts[ctrl_type]["styleboxes"]
@@ -762,28 +772,37 @@ func apply_preview() -> void:
 							var val_path = _owner.get_part_value(rec)
 							var sb = load_stylebox_uncached(str(val_path))
 							if sb is StyleBoxFlat and sb.shadow_size > 0:
-								var min_sep = int(sb.shadow_size * 2 + 10)
-								if h_sep < min_sep:
-									h_sep = min_sep
-								if v_sep < min_sep:
-									v_sep = min_sep
+								var needed_sep = int(base_sep + sb.shadow_size)
+								if common_size.x >= 20.0:
+									needed_sep = min(needed_sep, int(max(base_sep, common_size.x * 0.75)))
+								if h_sep < needed_sep:
+									h_sep = needed_sep
+								if v_sep < needed_sep:
+									v_sep = needed_sep
 								max_ctrl_expand_y = max(max_ctrl_expand_y, float(sb.shadow_size))
 							elif sb is StyleBox:
 								var exp_x = max(sb.expand_margin_left, sb.expand_margin_right)
 								var exp_y = max(sb.expand_margin_top, sb.expand_margin_bottom)
 								if exp_x > 0 or exp_y > 0:
-									var min_sep_h = int(exp_x * 2 + 16)
-									var min_sep_v = int(exp_y * 2 + 16)
-									if h_sep < min_sep_h:
-										h_sep = min_sep_h
-									if v_sep < min_sep_v:
-										v_sep = min_sep_v
+									var needed_sep_h = int(base_sep + exp_x)
+									var needed_sep_v = int(base_sep + exp_y)
+									if common_size.x >= 20.0:
+										needed_sep_h = min(needed_sep_h, int(max(base_sep, common_size.x * 0.75)))
+									if common_size.y >= 20.0:
+										needed_sep_v = min(needed_sep_v, int(max(base_sep, common_size.y * 0.75)))
+									if h_sep < needed_sep_h:
+										h_sep = needed_sep_h
+									if v_sep < needed_sep_v:
+										v_sep = needed_sep_v
 									max_ctrl_expand_y = max(max_ctrl_expand_y, exp_y)
 									
 					sub_grid.add_theme_constant_override("h_separation", h_sep)
 					sub_grid.add_theme_constant_override("v_separation", v_sep)
 					if max_ctrl_expand_y > 0:
-						section_box.add_theme_constant_override("separation", int(max(8, max_ctrl_expand_y + 12)))
+						var sec_sep = int(max(8, max_ctrl_expand_y + 8))
+						if common_size.y >= 20.0:
+							sec_sep = min(sec_sep, int(max(8, common_size.y * 0.75)))
+						section_box.add_theme_constant_override("separation", sec_sep)
 					
 					if not is_tab_ctrl and _owner.preview_item_width > 0:
 						sub_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -792,9 +811,6 @@ func apply_preview() -> void:
 						
 					section_box.add_child(sub_grid)
 					family_box.add_child(section_box)
-					
-					var states = get_configured_states(ctrl_type)
-					var common_size = _find_common_design_size(ctrl_type, states, metadata)
 					
 					for state in states:
 						var inst: Control = null
