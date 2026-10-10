@@ -6,6 +6,8 @@
 	"preview_columns": 6,
 	"preview_font_size": 22,
 	"preview_item_width": 0,
+	"preview_scale": 1.2,
+	"preview_scale_mode": "preset",
 	"preview_separation": 20,
 	"preview_texts": {
 		"BackButton_disabled": "",
@@ -55,7 +57,7 @@
 		"ToggleGenderMaleButton_normal": "",
 		"ToggleGenderMaleButton_pressed": ""
 	},
-	"settings_split_ratio": 0.377441077441077,
+	"settings_split_ratio": 0.446222368855163,
 	"theme_parts": {
 		"BackButton": {
 			"styleboxes": {
@@ -79,13 +81,13 @@
 		},
 		"BeginningStatsTabBar": {
 			"constants": {
-				"h_separation": {
-					"id": "beginning_stats_tab_h_separation",
-					"value": 110.0
-				},
 				"side_margin": {
 					"id": "beginning_stats_tab_side_margin",
 					"value": 56.0
+				},
+				"tab_separation": {
+					"id": "beginning_stats_tab_separation",
+					"value": 20.0
 				}
 			},
 			"styleboxes": {
@@ -182,6 +184,32 @@
 				"pressed": {
 					"id": "decrease_button_pressed",
 					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/decrease_button_pressed.tres"
+				}
+			}
+		},
+		"EndingStatsTabBar": {
+			"constants": {
+				"tab_separation": {
+					"id": "ending_stats_tab_separation",
+					"value": 20.0
+				}
+			},
+			"styleboxes": {
+				"tab_disabled": {
+					"id": "ending_stats_tab_disabled",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/ending_stats_tab_disabled.tres"
+				},
+				"tab_hovered": {
+					"id": "ending_stats_tab_hovered",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/ending_stats_tab_hovered.tres"
+				},
+				"tab_selected": {
+					"id": "ending_stats_tab_selected",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/ending_stats_tab_selected.tres"
+				},
+				"tab_unselected": {
+					"id": "ending_stats_tab_unselected",
+					"value": "res://addons/anomalyAcesThemeGenerator/working/Themes/CoTO/ResourceFiles/ending_stats_tab_unselected.tres"
 				}
 			}
 		},
@@ -474,6 +502,7 @@
 		"ColorSelectionButton": "Button",
 		"ColorSelectionPanel": "Panel",
 		"DecreaseButton": "Button",
+		"EndingStatsTabBar": "TabBar",
 		"ForwardButton": "Button",
 		"GenderToggleMaleButton": "Button",
 		"GroupOnlineButton": "Button",

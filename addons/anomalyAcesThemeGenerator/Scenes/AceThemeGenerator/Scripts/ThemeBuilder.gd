@@ -100,6 +100,13 @@ func build_theme() -> Theme:
 			if temp_theme.has_stylebox("pressed", ctrl_type) and not temp_theme.has_stylebox("hover_pressed", ctrl_type):
 				temp_theme.set_stylebox("hover_pressed", ctrl_type, temp_theme.get_stylebox("pressed", ctrl_type))
 
+	# Ensure TabBar variations with h_separation also set tab_separation if tab_separation wasn't explicitly defined
+	for ctrl_type in _owner.theme_parts.keys():
+		var is_tabbar = ctrl_type == "TabBar" or _owner.theme_variations.get(ctrl_type, "") == "TabBar"
+		if is_tabbar:
+			if temp_theme.has_constant("h_separation", ctrl_type) and not temp_theme.has_constant("tab_separation", ctrl_type):
+				temp_theme.set_constant("tab_separation", ctrl_type, temp_theme.get_constant("h_separation", ctrl_type))
+
 	# Keep every button state anchored to the normal state's geometry.
 	_align_button_state_margins(temp_theme)
 

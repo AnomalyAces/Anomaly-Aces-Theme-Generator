@@ -41,6 +41,8 @@ func save_config() -> void:
 		"preview_item_width": _owner.preview_item_width,
 		"preview_font_size": _owner.preview_font_size,
 		"preview_separation": _owner.preview_separation,
+		"preview_scale": _owner.preview_scale,
+		"preview_scale_mode": _owner.preview_scale_mode,
 		"preview_texts": _owner.preview_texts,
 		"settings_split_ratio": _owner.settings_split_ratio
 	}
@@ -116,6 +118,8 @@ func load_config() -> void:
 					_owner.preview_item_width = int(data.get("preview_item_width", 200))
 					_owner.preview_font_size = int(data.get("preview_font_size", 16))
 					_owner.preview_separation = int(data.get("preview_separation", 40))
+					_owner.preview_scale = float(data.get("preview_scale", 1.0))
+					_owner.preview_scale_mode = str(data.get("preview_scale_mode", ""))
 					_owner.preview_texts = data.get("preview_texts", {})
 					_owner.settings_split_ratio = float(data.get("settings_split_ratio", 0.5))
 			else:
@@ -155,6 +159,8 @@ func load_config() -> void:
 		_owner.preview_font_size_spin.value = _owner.preview_font_size
 	if _owner.preview_separation_spin:
 		_owner.preview_separation_spin.value = _owner.preview_separation
+	if _owner.has_method("sync_scale_ui"):
+		_owner.sync_scale_ui(false)
 
 	_owner._config_loaded = true
 	_owner._parts_manager.cleanup_unique_properties()
@@ -171,6 +177,8 @@ func load_config() -> void:
 		"preview_item_width": _owner.preview_item_width,
 		"preview_font_size": _owner.preview_font_size,
 		"preview_separation": _owner.preview_separation,
+		"preview_scale": _owner.preview_scale,
+		"preview_scale_mode": _owner.preview_scale_mode,
 		"preview_texts": _owner.preview_texts
 	}
 	var save_file = FileAccess.open(_owner.CONFIG_FILE_PATH, FileAccess.WRITE)
@@ -232,6 +240,10 @@ func import_config_from_file(file_path: String) -> void:
 	_owner.preview_item_width = int(data.get("preview_item_width", 200))
 	_owner.preview_font_size = int(data.get("preview_font_size", 16))
 	_owner.preview_separation = int(data.get("preview_separation", 40))
+	if data.has("preview_scale"):
+		_owner.preview_scale = float(data.get("preview_scale", 1.0))
+	if data.has("preview_scale_mode"):
+		_owner.preview_scale_mode = str(data.get("preview_scale_mode", ""))
 	_owner.preview_texts = data.get("preview_texts", {})
 	if data.has("settings_split_ratio"):
 		_owner.settings_split_ratio = float(data.get("settings_split_ratio", 0.5))
@@ -254,6 +266,8 @@ func import_config_from_file(file_path: String) -> void:
 		_owner.preview_font_size_spin.value = _owner.preview_font_size
 	if _owner.preview_separation_spin:
 		_owner.preview_separation_spin.value = _owner.preview_separation
+	if _owner.has_method("sync_scale_ui"):
+		_owner.sync_scale_ui(false)
 		
 	# Save this configuration to our active local config file so it persists
 	save_config()

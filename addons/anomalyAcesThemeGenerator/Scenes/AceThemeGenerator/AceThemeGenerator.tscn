@@ -314,6 +314,8 @@ size_flags_horizontal = 3
 
 [node name="PreviewHeaderBox" type="HFlowContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1739919011]
 layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 6
 
 [node name="PreviewHeader" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=835492427]
 layout_mode = 2
@@ -321,24 +323,104 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 20
 text = "Live Theme Preview (Panel Container)"
 
-[node name="SettingsViewLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942307]
+[node name="SettingsSizeBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942306]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SettingsViewLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/SettingsSizeBox" unique_id=1276942307]
 layout_mode = 2
 text = "Settings Size:"
 
-[node name="SettingsViewOption" type="OptionButton" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942308]
+[node name="SettingsViewOption" type="OptionButton" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/SettingsSizeBox" unique_id=1276942308]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColumnsLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650074]
+[node name="ScaleBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=1276942316]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ScaleLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ScaleBox" unique_id=1276942317]
+layout_mode = 2
+text = "Scale:"
+
+[node name="PreviewScaleOption" type="OptionButton" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ScaleBox" unique_id=1276942318]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PreviewScaleSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ScaleBox" unique_id=1276942319]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 10.0
+max_value = 500.0
+step = 1.0
+value = 100.0
+suffix = "%"
+custom_minimum_size = Vector2(80, 0)
+
+[node name="ColumnsBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650073]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ColumnsLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ColumnsBox" unique_id=644650074]
 layout_mode = 2
 text = "Columns:"
 
-[node name="PreviewColumnsSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=2037741243]
+[node name="PreviewColumnsSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ColumnsBox" unique_id=2037741243]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
 max_value = 6.0
 value = 5.0
+
+[node name="ItemWidthBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650080]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ItemWidthLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ItemWidthBox" unique_id=644650081]
+layout_mode = 2
+text = "Item Width:"
+
+[node name="PreviewItemWidthSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/ItemWidthBox" unique_id=644650082]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.0
+max_value = 2000.0
+step = 10.0
+value = 200.0
+custom_minimum_size = Vector2(80, 0)
+
+[node name="FontSizeBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650083]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FontSizeLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/FontSizeBox" unique_id=644650084]
+layout_mode = 2
+text = "Font Size:"
+
+[node name="PreviewFontSizeSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/FontSizeBox" unique_id=644650085]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 8.0
+max_value = 72.0
+value = 16.0
+custom_minimum_size = Vector2(80, 0)
+
+[node name="SeparationBox" type="HBoxContainer" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox" unique_id=644650086]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SeparationLabel" type="Label" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/SeparationBox" unique_id=644650087]
+layout_mode = 2
+text = "Spacing:"
+
+[node name="PreviewSeparationSpin" type="SpinBox" parent="MainPanel/HSplit/RightPanel/PreviewHeaderBox/SeparationBox" unique_id=644650088]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.0
+max_value = 500.0
+step = 5.0
+value = 40.0
+custom_minimum_size = Vector2(80, 0)
 
 [node name="PreviewArea" type="PanelContainer" parent="MainPanel/HSplit/RightPanel" unique_id=1513521225]
 unique_name_in_owner = true
@@ -358,10 +440,18 @@ text = "Panel Container"
 horizontal_alignment = 1
 
 [node name="PreviewScroll" type="ScrollContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox" unique_id=1330070234]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PreviewMargin" type="MarginContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll" unique_id=123456781]
+[node name="PreviewScaleWrapper" type="Control" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll" unique_id=1330070235]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PreviewMargin" type="MarginContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll/PreviewScaleWrapper" unique_id=123456781]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -370,7 +460,7 @@ theme_override_constants/margin_top = 60
 theme_override_constants/margin_right = 60
 theme_override_constants/margin_bottom = 60
 
-[node name="PreviewGrid" type="GridContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll/PreviewMargin" unique_id=1609152068]
+[node name="PreviewGrid" type="GridContainer" parent="MainPanel/HSplit/RightPanel/PreviewArea/PreviewVBox/PreviewScroll/PreviewScaleWrapper/PreviewMargin" unique_id=1609152068]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

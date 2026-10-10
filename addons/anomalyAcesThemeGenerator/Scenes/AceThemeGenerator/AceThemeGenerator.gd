@@ -29,6 +29,9 @@ var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes
 @onready var parts_tree: Tree = %PartsTree
 
 @onready var preview_area: PanelContainer = %PreviewArea
+@onready var preview_scroll: ScrollContainer = %PreviewScroll
+@onready var preview_scale_wrapper: Control = %PreviewScaleWrapper
+@onready var preview_margin: MarginContainer = %PreviewMargin
 @onready var preview_grid: GridContainer = %PreviewGrid
 @onready var h_split: HSplitContainer = %MainPanel/HSplit
 
@@ -54,6 +57,11 @@ var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes
 
 @onready var preview_columns_spin: SpinBox = %PreviewColumnsSpin
 @onready var settings_view_option: OptionButton = %SettingsViewOption
+@onready var preview_scale_option: OptionButton = %PreviewScaleOption
+@onready var preview_scale_spin: SpinBox = %PreviewScaleSpin
+@onready var preview_item_width_spin: SpinBox = %PreviewItemWidthSpin
+@onready var preview_font_size_spin: SpinBox = %PreviewFontSizeSpin
+@onready var preview_separation_spin: SpinBox = %PreviewSeparationSpin
 @onready var new_override_btn: Button = %NewOverrideBtn
 @onready var duplicate_override_btn: Button = %DuplicateOverrideBtn
 @onready var delete_override_btn: Button = %DeleteOverrideBtn
@@ -63,13 +71,14 @@ var output_file: String = "res://addons/anomalyAcesThemeGenerator/working/Themes
 var theme_parts: Dictionary = {}
 var theme_variations: Dictionary = {}
 var _config_loaded: bool = false
+var preview_scale: float = 1.0
+var preview_scale_mode: String = ""
+var scale_presets: Array[Dictionary] = []
+var _is_syncing_scale_ui: bool = false
 var preview_columns: int = 3
 var preview_item_width: int = 200
-var preview_item_width_spin: SpinBox
 var preview_font_size: int = 16
-var preview_font_size_spin: SpinBox
 var preview_separation: int = 40
-var preview_separation_spin: SpinBox
 var preview_texts: Dictionary = {}
 var settings_split_ratio: float = 0.5
 var _target_select_meta = null
@@ -215,64 +224,35 @@ func setup_ui() -> void:
 	if preview_header:
 		preview_header.text = "Live Theme Preview (Panel Container)"
 		
-	# Dynamic creation of Preview Item Width controls in PreviewHeaderBox
-	var header_box = preview_area.get_parent().get_node_or_null("PreviewHeaderBox")
-	if header_box:
-		# Add separator
-		var sep = Control.new()
-		sep.custom_minimum_size = Vector2(10, 0)
-		header_box.add_child(sep)
-		
-		var width_label = Label.new()
-		width_label.text = "Item Width:"
-		header_box.add_child(width_label)
-		
-		preview_item_width_spin = SpinBox.new()
-		preview_item_width_spin.name = "PreviewItemWidthSpin"
-		preview_item_width_spin.min_value = 0
-		preview_item_width_spin.max_value = 2000
-		preview_item_width_spin.step = 10
+	# Wire live preview controls
+	if preview_item_width_spin:
 		preview_item_width_spin.value = preview_item_width
-		preview_item_width_spin.custom_minimum_size = Vector2(80, 0)
 		preview_item_width_spin.value_changed.connect(_on_preview_item_width_changed)
-		header_box.add_child(preview_item_width_spin)
-		
-		# Add separator
-		var sep2 = Control.new()
-		sep2.custom_minimum_size = Vector2(10, 0)
-		header_box.add_child(sep2)
-		
-		var font_size_label = Label.new()
-		font_size_label.text = "Font Size:"
-		header_box.add_child(font_size_label)
-		
-		preview_font_size_spin = SpinBox.new()
-		preview_font_size_spin.name = "PreviewFontSizeSpin"
-		preview_font_size_spin.min_value = 8
-		preview_font_size_spin.max_value = 72
+
+	if preview_font_size_spin:
 		preview_font_size_spin.value = preview_font_size
-		preview_font_size_spin.custom_minimum_size = Vector2(80, 0)
 		preview_font_size_spin.value_changed.connect(_on_preview_font_size_changed)
-		header_box.add_child(preview_font_size_spin)
 
-		# Add separator
-		var sep3 = Control.new()
-		sep3.custom_minimum_size = Vector2(10, 0)
-		header_box.add_child(sep3)
-
-		var spacing_label = Label.new()
-		spacing_label.text = "Spacing:"
-		header_box.add_child(spacing_label)
-
-		preview_separation_spin = SpinBox.new()
-		preview_separation_spin.name = "PreviewSeparationSpin"
-		preview_separation_spin.min_value = 0
-		preview_separation_spin.max_value = 500
-		preview_separation_spin.step = 5
+	if preview_separation_spin:
 		preview_separation_spin.value = preview_separation
-		preview_separation_spin.custom_minimum_size = Vector2(80, 0)
 		preview_separation_spin.value_changed.connect(_on_preview_separation_changed)
-		header_box.add_child(preview_separation_spin)
+
+	if preview_scale_spin:
+		preview_scale_spin.value = round(preview_scale * 100.0)
+		preview_scale_spin.value_changed.connect(_on_preview_scale_spin_changed)
+
+	if preview_scale_option:
+		populate_scale_presets()
+		preview_scale_option.item_selected.connect(_on_preview_scale_option_selected)
+		sync_scale_ui(false)
+
+	if preview_scroll:
+		preview_scroll.resized.connect(_on_preview_scroll_resized)
+	if preview_margin:
+		preview_margin.resized.connect(_on_preview_margin_resized)
+
+	if get_tree() and get_tree().root:
+		get_tree().root.size_changed.connect(_on_root_window_resized)
 		
 	if settings_view_option:
 		settings_view_option.clear()
@@ -322,6 +302,10 @@ func _apply_editor_scaling() -> void:
 		preview_font_size_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 	if preview_separation_spin:
 		preview_separation_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
+	if preview_scale_option:
+		preview_scale_option.custom_minimum_size = Vector2(int(140 * scale), 0)
+	if preview_scale_spin:
+		preview_scale_spin.custom_minimum_size = Vector2(int(80 * scale), 0)
 
 # --- Signal Handlers (thin pass-throughs) ---
 
@@ -410,6 +394,159 @@ func _on_preview_separation_changed(value: float) -> void:
 	_config.save_config()
 	_preview.apply_preview()
 
+func get_user_window_resolution() -> Vector2i:
+	if Engine.is_editor_hint():
+		var win_size = DisplayServer.window_get_size()
+		if win_size.x > 0 and win_size.y > 0:
+			return win_size
+		var vp = get_viewport()
+		if vp and vp.size.x > 0 and vp.size.y > 0:
+			return vp.size
+	return Vector2i(1920, 1080)
+
+func get_user_screen_resolution() -> Vector2i:
+	if Engine.is_editor_hint():
+		var screen = DisplayServer.window_get_current_screen()
+		var scr_size = DisplayServer.screen_get_size(screen)
+		if scr_size.x > 0 and scr_size.y > 0:
+			return scr_size
+	return Vector2i(1920, 1080)
+
+func populate_scale_presets() -> void:
+	if not preview_scale_option:
+		return
+
+	var win_res = get_user_window_resolution()
+	var scr_res = get_user_screen_resolution()
+
+	var win_scale = clamp(1080.0 / float(win_res.y), 0.10, 5.0) if win_res.y > 0 else 1.0
+	var scr_scale = clamp(1080.0 / float(scr_res.y), 0.10, 5.0) if scr_res.y > 0 else 1.0
+
+	scale_presets.clear()
+	scale_presets.append({
+		"label": "Match Window (%d×%d - %d%%)" % [win_res.x, win_res.y, int(round(win_scale * 100.0))],
+		"scale": win_scale,
+		"mode": "window"
+	})
+	scale_presets.append({
+		"label": "Match Screen (%d×%d - %d%%)" % [scr_res.x, scr_res.y, int(round(scr_scale * 100.0))],
+		"scale": scr_scale,
+		"mode": "screen"
+	})
+	scale_presets.append({"label": "1920×1080 (Base - 100%)", "scale": 1.0, "mode": "resolution"})
+	scale_presets.append({"label": "3840×2160 (4K - 50%)", "scale": 1080.0 / 2160.0, "mode": "resolution"})
+	scale_presets.append({"label": "2560×1440 (2K - 75%)", "scale": 1080.0 / 1440.0, "mode": "resolution"})
+	scale_presets.append({"label": "1600×900 (900p - 120%)", "scale": 1080.0 / 900.0, "mode": "resolution"})
+	scale_presets.append({"label": "1366×768 (141%)", "scale": 1080.0 / 768.0, "mode": "resolution"})
+	scale_presets.append({"label": "1280×720 (720p - 150%)", "scale": 1080.0 / 720.0, "mode": "resolution"})
+	scale_presets.append({"label": "25% Scale", "scale": 0.25, "mode": "percent"})
+	scale_presets.append({"label": "50% Scale", "scale": 0.50, "mode": "percent"})
+	scale_presets.append({"label": "75% Scale", "scale": 0.75, "mode": "percent"})
+	scale_presets.append({"label": "100% Scale", "scale": 1.00, "mode": "percent"})
+	scale_presets.append({"label": "125% Scale", "scale": 1.25, "mode": "percent"})
+	scale_presets.append({"label": "150% Scale", "scale": 1.50, "mode": "percent"})
+	scale_presets.append({"label": "200% Scale", "scale": 2.00, "mode": "percent"})
+	scale_presets.append({"label": "Custom", "scale": -1.0, "mode": "custom"})
+
+	var cur_sel = preview_scale_option.selected
+	preview_scale_option.clear()
+	for preset in scale_presets:
+		preview_scale_option.add_item(preset["label"])
+
+	if cur_sel >= 0 and cur_sel < scale_presets.size():
+		preview_scale_option.selected = cur_sel
+
+func sync_scale_ui(save: bool = true) -> void:
+	if _is_syncing_scale_ui:
+		return
+	_is_syncing_scale_ui = true
+
+	if preview_scale_spin:
+		preview_scale_spin.value = round(preview_scale * 100.0)
+
+	if preview_scale_option and not scale_presets.is_empty():
+		var matched_idx = -1
+		if preview_scale_mode == "window":
+			matched_idx = 0
+		elif preview_scale_mode == "screen":
+			matched_idx = 1
+		else:
+			for i in range(2, scale_presets.size() - 1):
+				if abs(scale_presets[i]["scale"] - preview_scale) < 0.005:
+					matched_idx = i
+					break
+			if matched_idx == -1:
+				matched_idx = scale_presets.size() - 1 # "Custom"
+		preview_scale_option.selected = matched_idx
+
+	_is_syncing_scale_ui = false
+
+	if save:
+		_config.save_config()
+	if _preview:
+		_preview.update_preview_scale_layout()
+
+func _on_preview_scale_option_selected(idx: int) -> void:
+	if _is_syncing_scale_ui or idx < 0 or idx >= scale_presets.size():
+		return
+
+	var preset = scale_presets[idx]
+	var mode = str(preset.get("mode", ""))
+
+	if mode == "window":
+		preview_scale_mode = "window"
+		var win_res = get_user_window_resolution()
+		if win_res.y > 0:
+			preview_scale = clamp(1080.0 / float(win_res.y), 0.10, 5.0)
+	elif mode == "screen":
+		preview_scale_mode = "screen"
+		var scr_res = get_user_screen_resolution()
+		if scr_res.y > 0:
+			preview_scale = clamp(1080.0 / float(scr_res.y), 0.10, 5.0)
+	elif mode == "custom":
+		preview_scale_mode = "custom"
+	else:
+		preview_scale_mode = "preset"
+		preview_scale = float(preset["scale"])
+
+	sync_scale_ui(true)
+
+func _on_preview_scale_spin_changed(value: float) -> void:
+	if _is_syncing_scale_ui:
+		return
+
+	preview_scale = clamp(value / 100.0, 0.10, 5.0)
+	preview_scale_mode = "custom"
+	sync_scale_ui(true)
+
+func _on_root_window_resized() -> void:
+	if preview_scale_mode == "window":
+		var win_res = get_user_window_resolution()
+		if win_res.y > 0:
+			preview_scale = clamp(1080.0 / float(win_res.y), 0.10, 5.0)
+		populate_scale_presets()
+		sync_scale_ui(true)
+	elif preview_scale_mode == "screen":
+		var scr_res = get_user_screen_resolution()
+		if scr_res.y > 0:
+			preview_scale = clamp(1080.0 / float(scr_res.y), 0.10, 5.0)
+		populate_scale_presets()
+		sync_scale_ui(true)
+	else:
+		populate_scale_presets()
+
+func _on_preview_scroll_resized() -> void:
+	if _preview:
+		_preview.update_preview_scale_layout()
+
+func _on_preview_margin_resized() -> void:
+	if _preview:
+		_preview.update_preview_scale_layout()
+
+func _update_preview_scale_deferred() -> void:
+	if _preview:
+		_preview.update_preview_scale_layout()
+
 func _on_settings_view_option_selected(idx: int) -> void:
 	match idx:
 		0: settings_split_ratio = 0.20
@@ -472,6 +609,11 @@ func setup_status_bar() -> void:
 	if not right_panel:
 		return
 		
+	var existing = right_panel.get_node_or_null("StatusBar")
+	if existing:
+		existing.name = "StatusBar_Old"
+		existing.queue_free()
+		
 	status_bar = PanelContainer.new()
 	status_bar.name = "StatusBar"
 	status_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -512,18 +654,19 @@ func set_status(text: String, is_loading: bool = false) -> void:
 	if not status_bar or not is_instance_valid(status_bar):
 		return
 		
+	status_bar.visible = true
 	if status_label:
 		status_label.text = text
 		
 	var style = status_bar.get_theme_stylebox("panel") as StyleBoxFlat
 	if is_loading:
-		status_bar.visible = true
 		if status_icon:
 			status_icon.text = "⏳"
 			status_icon.add_theme_color_override("font_color", Color(0.95, 0.75, 0.2))
 		if style:
 			style.border_color = Color(0.95, 0.75, 0.2, 0.9)
 			style.bg_color = Color(0.18, 0.16, 0.10, 0.95)
+		status_bar.queue_redraw()
 		if is_inside_tree():
 			DisplayServer.cursor_set_shape(DisplayServer.CURSOR_BUSY)
 			await get_tree().process_frame
@@ -534,5 +677,6 @@ func set_status(text: String, is_loading: bool = false) -> void:
 		if style:
 			style.border_color = Color(0.2, 0.6, 0.35, 0.6)
 			style.bg_color = Color(0.12, 0.15, 0.20, 0.95)
+		status_bar.queue_redraw()
 		if is_inside_tree():
 			DisplayServer.cursor_set_shape(DisplayServer.CURSOR_ARROW)

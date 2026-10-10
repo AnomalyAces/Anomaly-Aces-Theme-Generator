@@ -137,31 +137,8 @@ func update_property_names() -> void:
 		update_value_input_control()
 		return
 		
-	# Resolve base class if it's a custom variation
-	var base_class = selected_type
-	if _owner.theme_variations.has(base_class):
-		base_class = _owner.theme_variations[base_class]
-		
-	if not ClassDB.class_exists(base_class):
-		base_class = "Control"
-		
 	var prop_type = _owner.prop_type_option.get_item_text(_owner.prop_type_option.selected).to_lower().replace(" ", "_")
-	var default_theme = ThemeDB.get_default_theme()
-	
-	var names: PackedStringArray = []
-	match prop_type:
-		"color":
-			names = default_theme.get_color_list(base_class)
-		"constant":
-			names = default_theme.get_constant_list(base_class)
-		"font":
-			names = default_theme.get_font_list(base_class)
-		"font_size":
-			names = default_theme.get_font_size_list(base_class)
-		"icon":
-			names = default_theme.get_icon_list(base_class)
-		"stylebox":
-			names = default_theme.get_stylebox_list(base_class)
+	var names = _get_theme_property_names(selected_type, prop_type)
 			
 	names.sort()
 	for n in names:
@@ -187,6 +164,33 @@ func update_property_names() -> void:
 			_owner.prop_name_option.selected = -1
 
 	update_value_input_control()
+
+func _get_theme_property_names(control_type: String, prop_type: String) -> PackedStringArray:
+	var base_class = control_type
+	if _owner.theme_variations.has(base_class):
+		base_class = _owner.theme_variations[base_class]
+		
+	if not ClassDB.class_exists(base_class):
+		base_class = "Control"
+		
+	var default_theme = ThemeDB.get_default_theme()
+	match prop_type:
+		"color":
+			return default_theme.get_color_list(base_class)
+		"constant":
+			var list = default_theme.get_constant_list(base_class)
+			if base_class == "TabBar" and not list.has("tab_separation"):
+				list.append("tab_separation")
+			return list
+		"font":
+			return default_theme.get_font_list(base_class)
+		"font_size":
+			return default_theme.get_font_size_list(base_class)
+		"icon":
+			return default_theme.get_icon_list(base_class)
+		"stylebox":
+			return default_theme.get_stylebox_list(base_class)
+	return PackedStringArray()
 
 func update_value_input_control() -> void:
 	_owner._stylebox_builder.ensure_metadata_controls()
@@ -337,6 +341,8 @@ func on_new_override_pressed() -> void:
 	if _owner.prop_name_option:
 		_owner.prop_name_option.selected = -1
 	update_value_input_control()
+	if _owner.has_method("set_status"):
+		_owner.set_status("Ready for new override (form cleared).", false)
 
 func on_duplicate_override_pressed() -> void:
 	if _owner.has_method("set_status"):
@@ -345,14 +351,20 @@ func on_duplicate_override_pressed() -> void:
 		if _owner.is_inside_tree() and Engine.is_editor_hint():
 			_owner._config.load_config()
 		else:
+			if _owner.has_method("set_status"):
+				_owner.set_status("Theme configuration not loaded.", false)
 			return
 			
 	var item = _owner.parts_tree.get_selected()
 	if not item:
+		if _owner.has_method("set_status"):
+			_owner.set_status("Please select an override from the tree to duplicate.", false)
 		return
 		
 	var meta = item.get_metadata(0)
 	if not (meta is Dictionary and meta.has("control_type")):
+		if _owner.has_method("set_status"):
+			_owner.set_status("Selected item cannot be duplicated (select a property override).", false)
 		return
 		
 	var ctrl_type = meta["control_type"]
@@ -360,6 +372,8 @@ func on_duplicate_override_pressed() -> void:
 	var prop_name = meta["prop_name"]
 	
 	if not (_owner.theme_parts.has(ctrl_type) and _owner.theme_parts[ctrl_type].has(sec_name) and _owner.theme_parts[ctrl_type][sec_name].has(prop_name)):
+		if _owner.has_method("set_status"):
+			_owner.set_status("Failed to duplicate: override not found.", false)
 		return
 		
 	var existing_record = _owner.theme_parts[ctrl_type][sec_name][prop_name]
@@ -401,23 +415,27 @@ func on_duplicate_override_pressed() -> void:
 	refresh_parts_tree()
 	_owner._preview.apply_preview()
 	if _owner.has_method("set_status"):
-		_owner.set_status("Theme part saved successfully!", false)
-	if _owner.has_method("set_status"):
-		_owner.set_status("Override duplicated successfully!", false)
+		_owner.set_status("Override duplicated: " + ctrl_type + " -> " + new_key, false)
 
 func on_delete_override_pressed() -> void:
 	if not _owner._config_loaded:
 		if _owner.is_inside_tree() and Engine.is_editor_hint():
 			_owner._config.load_config()
 		else:
+			if _owner.has_method("set_status"):
+				_owner.set_status("Theme configuration not loaded.", false)
 			return
 
 	var item = _owner.parts_tree.get_selected()
 	if not item:
+		if _owner.has_method("set_status"):
+			_owner.set_status("Please select an override from the tree to delete.", false)
 		return
 
 	var meta = item.get_metadata(0)
 	if not (meta is Dictionary and meta.has("control_type")):
+		if _owner.has_method("set_status"):
+			_owner.set_status("Selected item cannot be deleted (select a property override).", false)
 		return
 
 	var ctrl_type = meta["control_type"]
@@ -442,6 +460,8 @@ func on_delete_override_pressed() -> void:
 	_owner._config.save_config()
 	refresh_parts_tree()
 	_owner._preview.apply_preview()
+	if _owner.has_method("set_status"):
+		_owner.set_status("Override deleted: " + ctrl_type + " -> " + prop_name, false)
 
 # Parts Builder Management
 func on_add_part_pressed() -> void:
@@ -456,11 +476,15 @@ func on_add_part_pressed() -> void:
 		printerr("Please select a base control type!")
 		push_warning("Please select a base control type!")
 		_owner._dialog_utils.show_warning_dialog("Please select a base control type!")
+		if _owner.has_method("set_status"):
+			_owner.set_status("Please select a base control type.", false)
 		return
 
 	if is_custom:
 		control_type = _owner.custom_type_name_edit.text.strip_edges()
 		if control_type == "":
+			if _owner.has_method("set_status"):
+				_owner.set_status("Please enter a custom type name.", false)
 			return
 		_owner.theme_variations[control_type] = selected_base
 	else:
@@ -469,6 +493,8 @@ func on_add_part_pressed() -> void:
 			_owner.theme_variations.erase(control_type)
 
 	if _owner.prop_type_option.selected == -1 or _owner.prop_name_option.selected == -1:
+		if _owner.has_method("set_status"):
+			_owner.set_status("Please select property type and property name.", false)
 		return
 	var prop_type = _owner.prop_type_option.get_item_text(_owner.prop_type_option.selected).to_lower().replace(" ", "_")
 	var prop_name = _owner.prop_name_option.get_item_text(_owner.prop_name_option.selected)
@@ -479,6 +505,8 @@ func on_add_part_pressed() -> void:
 	
 	var sec = _owner.SECTION_MAP.get(prop_type, "")
 	if sec == "":
+		if _owner.has_method("set_status"):
+			_owner.set_status("Invalid property type.", false)
 		return
 
 	var is_cleared = false
@@ -505,6 +533,8 @@ func on_add_part_pressed() -> void:
 			printerr("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
 			push_warning("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
 			_owner._dialog_utils.show_warning_dialog("The assigned resource must be saved to a file first! Click the drop-down on the resource picker and select 'Save'.")
+			if _owner.has_method("set_status"):
+				_owner.set_status("The assigned resource must be saved to a file first.", false)
 			return
 
 	if is_cleared:
@@ -520,9 +550,13 @@ func on_add_part_pressed() -> void:
 		_owner._config.save_config()
 		refresh_parts_tree()
 		_owner._preview.apply_preview()
+		if _owner.has_method("set_status"):
+			_owner.set_status("Override cleared: " + control_type + " -> " + prop_key, false)
 		return
 
 	if prop_key == "" or prop_val == "":
+		if _owner.has_method("set_status"):
+			_owner.set_status("Property name or value cannot be empty.", false)
 		return
 
 	if not _owner.theme_parts.has(control_type):
@@ -567,6 +601,8 @@ func on_add_part_pressed() -> void:
 	_owner._config.save_config()
 	refresh_parts_tree()
 	_owner._preview.apply_preview()
+	if _owner.has_method("set_status"):
+		_owner.set_status("Override updated: " + control_type + " -> " + prop_key, false)
 
 func refresh_parts_tree() -> void:
 	var sel_meta = _owner._target_select_meta
@@ -582,16 +618,30 @@ func refresh_parts_tree() -> void:
 	_owner.parts_tree.hide_root = true
 
 	for ctrl_type in _owner.theme_parts.keys():
-		var ctrl_item = _owner.parts_tree.create_item(root)
-		if _owner.theme_variations.has(ctrl_type) and _owner.theme_variations[ctrl_type] != "":
-			ctrl_item.set_text(0, ctrl_type + " (" + _owner.theme_variations[ctrl_type] + ")")
-		else:
-			ctrl_item.set_text(0, ctrl_type)
-		
 		var sections = _owner.theme_parts[ctrl_type]
+		var ctrl_item: TreeItem = null
 		for sec_name in sections.keys():
+			var prop_type = ""
+			for candidate_type in _owner.SECTION_MAP:
+				if _owner.SECTION_MAP[candidate_type] == sec_name:
+					prop_type = candidate_type
+					break
+			if prop_type == "":
+				continue
+
 			var overrides = sections[sec_name]
+			var valid_names = _get_theme_property_names(ctrl_type, prop_type)
 			for prop_name in overrides.keys():
+				if not valid_names.has(_owner.get_base_prop_name(prop_name)):
+					continue
+
+				if ctrl_item == null:
+					ctrl_item = _owner.parts_tree.create_item(root)
+					if _owner.theme_variations.has(ctrl_type) and _owner.theme_variations[ctrl_type] != "":
+						ctrl_item.set_text(0, ctrl_type + " (" + _owner.theme_variations[ctrl_type] + ")")
+					else:
+						ctrl_item.set_text(0, ctrl_type)
+
 				var entry = overrides[prop_name]
 				var val_item = _owner.parts_tree.create_item(ctrl_item)
 				var entry_id = _owner.get_part_id(entry)
@@ -674,6 +724,8 @@ func on_tree_item_selected() -> void:
 		# 4. Update the input widgets and Name/ID
 		update_value_input_control()
 		_owner._loading_from_tree = false
+		if _owner.has_method("set_status"):
+			_owner.set_status("Loaded override: " + ctrl_type + " -> " + prop_name, false)
 
 func on_override_name_changed(new_text: String) -> void:
 	if not _owner._config_loaded:

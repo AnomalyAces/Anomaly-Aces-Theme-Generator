@@ -180,23 +180,43 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 					max_expand_y = max(max_expand_y, float(sb.shadow_size))
 		
 		# 1. User-configured constants: user values take priority so users have complete freedom
+		var user_tab_sep = -1
 		var user_h_sep = -1
 		if _owner.theme_parts.has(theme_type) and _owner.theme_parts[theme_type].has("constants"):
 			var consts = _owner.theme_parts[theme_type]["constants"]
+			if consts.has("tab_separation"):
+				user_tab_sep = int(_owner.get_part_value(consts["tab_separation"]))
 			if consts.has("h_separation"):
 				user_h_sep = int(_owner.get_part_value(consts["h_separation"]))
+
+		if user_tab_sep == -1 and theme_ref != null:
+			if theme_ref.has_constant("tab_separation", theme_type):
+				user_tab_sep = theme_ref.get_constant("tab_separation", theme_type)
+			elif theme_ref.has_constant("tab_separation", inst.get_class()):
+				user_tab_sep = theme_ref.get_constant("tab_separation", inst.get_class())
+
 		if user_h_sep == -1 and theme_ref != null:
 			if theme_ref.has_constant("h_separation", theme_type):
 				user_h_sep = theme_ref.get_constant("h_separation", theme_type)
 			elif theme_ref.has_constant("h_separation", inst.get_class()):
 				user_h_sep = theme_ref.get_constant("h_separation", inst.get_class())
+
+		# In Godot, tab_separation controls the space between tabs.
+		# If user configured h_separation on a TabBar without tab_separation, use h_separation as fallback
+		# since users expect horizontal tab spacing.
+		var final_tab_sep = user_tab_sep
+		if final_tab_sep == -1 and user_h_sep >= 0:
+			final_tab_sep = user_h_sep
+		elif final_tab_sep == -1 and max_expand_x > 0.0:
+			final_tab_sep = int(ceil(max_expand_x * 2.0))
+
+		if final_tab_sep >= 0:
+			inst.add_theme_constant_override("tab_separation", final_tab_sep)
+
+		if user_h_sep >= 0:
+			inst.add_theme_constant_override("h_separation", user_h_sep)
 		
-		var safe_h_sep = 16
-		if max_expand_x > 0.0:
-			safe_h_sep = int(ceil(max_expand_x * 2.0 + 16.0))
-		var final_h_sep = user_h_sep if user_h_sep >= 0 else safe_h_sep
-		inst.add_theme_constant_override("h_separation", final_h_sep)
-		
+		# side_margin is a TabContainer constant; if user configured it, respect it
 		var user_side_margin = -1
 		if _owner.theme_parts.has(theme_type) and _owner.theme_parts[theme_type].has("constants"):
 			var consts = _owner.theme_parts[theme_type]["constants"]
@@ -208,11 +228,8 @@ func setup_preview_node(inst: Control, display_name: String, theme_ref: Theme = 
 			elif theme_ref.has_constant("side_margin", inst.get_class()):
 				user_side_margin = theme_ref.get_constant("side_margin", inst.get_class())
 				
-		var safe_side_margin = 16
-		if max_expand_x > 0.0:
-			safe_side_margin = int(ceil(max_expand_x + 16.0))
-		var final_side_margin = user_side_margin if user_side_margin >= 0 else safe_side_margin
-		inst.add_theme_constant_override("side_margin", final_side_margin)
+		if user_side_margin >= 0:
+			inst.add_theme_constant_override("side_margin", user_side_margin)
 		
 		# 2. Add tabs representing states
 		var t0 = "Tab 1 (Unselected)"
@@ -372,7 +389,7 @@ func load_stylebox_uncached(val_path: String) -> StyleBox:
 	var sb = ResourceLoader.load(val_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 	if sb is StyleBoxTexture:
 		var tex_sb = sb as StyleBoxTexture
-		if tex_sb.texture and tex_sb.texture.resource_path != "":
+		if tex_sb.texture and tex_sb.texture.resource_path != "" and not tex_sb.texture.resource_path.contains("::"):
 			var tex_path = tex_sb.texture.resource_path
 			if ResourceLoader.exists(tex_path):
 				var fresh_tex = ResourceLoader.load(tex_path, "", ResourceLoader.CACHE_MODE_REPLACE)
@@ -1020,6 +1037,61 @@ func apply_preview() -> void:
 				var family_spacer = Control.new()
 				family_spacer.custom_minimum_size = Vector2(0, 20)
 				_owner.preview_grid.add_child(family_spacer)
+
+	update_preview_scale_layout()
+	if _owner.has_method("_update_preview_scale_deferred"):
+		_owner.call_deferred("_update_preview_scale_deferred")
+	if _owner.has_method("set_status"):
+		_owner.set_status("Theme preview updated.", false)
+
+var _updating_scale_layout: bool = false
+
+func update_preview_scale_layout() -> void:
+	if _updating_scale_layout:
+		return
+	if not _owner:
+		return
+		
+	var scroll: ScrollContainer = _owner.preview_scroll if "preview_scroll" in _owner else null
+	var wrapper: Control = _owner.preview_scale_wrapper if "preview_scale_wrapper" in _owner else null
+	var margin: MarginContainer = _owner.preview_margin if "preview_margin" in _owner else null
+	var grid: GridContainer = _owner.preview_grid if "preview_grid" in _owner else null
+	
+	if not scroll or not wrapper or not margin or not grid:
+		return
+
+	_updating_scale_layout = true
+
+	var scale_val: float = _owner.preview_scale if "preview_scale" in _owner else 1.0
+	if scale_val <= 0.0:
+		scale_val = 1.0
+
+	margin.scale = Vector2(scale_val, scale_val)
+	margin.position = Vector2.ZERO
+
+	# Available scroll viewport space
+	var scroll_w = max(100.0, scroll.size.x)
+	var scroll_h = max(100.0, scroll.size.y)
+
+	# Content's unscaled minimum size
+	var min_content = margin.get_combined_minimum_size()
+
+	# Unscaled size that fits visible area
+	var fit_w = scroll_w / scale_val
+	var fit_h = scroll_h / scale_val
+
+	var target_w = max(min_content.x, fit_w)
+	var target_h = max(min_content.y, fit_h)
+
+	margin.size = Vector2(target_w, target_h)
+
+	# Update wrapper minimum size so ScrollContainer scrollbars match the scaled content exactly
+	wrapper.custom_minimum_size = Vector2(
+		ceil(margin.size.x * scale_val),
+		ceil(margin.size.y * scale_val)
+	)
+
+	_updating_scale_layout = false
 
 func on_preview_item_gui_input(event: InputEvent, inst: Control) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
